@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Linking, TouchableOpacity, ScrollView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/Ionicons'; // You can use any other icon set as well
+
 
 const AboutScreen = () => {
   const developerName = "Blaine Oler";
   const contactEmail = "ectscmp@gmail.com";
   const appDescription = "This app is designed to provide a central place to access key resources in the ECTS CMP program. Developed and managed by EctsCMP.";
-  const appVersion = "7.0.0";
   const licenseUrl = "https://opensource.org/licenses/MIT"; // License link
 
   const handleEmailPress = () => {
@@ -33,13 +34,13 @@ const AboutScreen = () => {
         </View>
 
 
-        <Text style={styles.sectionTitle}>Version</Text>
-        <Text style={styles.contentText}>
-          App Version: <Text style={styles.version}>{appVersion}</Text>
-        </Text>
+ 
+        <Text style={styles.sectionTitle}>Contact</Text>
 
         <TouchableOpacity onPress={handleEmailPress}>
-          <Text style={styles.contactEmail}>Contact: {contactEmail}</Text>
+
+          <Text style={styles.contactEmail}>
+             {contactEmail}</Text>
         </TouchableOpacity>
 
         {/* Features Section */}
@@ -62,10 +63,23 @@ const AboutScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Changelog Section */}
-        <Text style={styles.sectionTitle}>Changelog</Text>
-        <Text style={styles.contentText}>v1.0.0 - Initial release</Text>
+        
+      {/* Version Section */}
+      <Text style={styles.sectionTitle}>VERSION</Text>
+      <View style={styles.versionContainer}>
+        <Text style={styles.contentText}>
+        v1.1.0.0 <Icon name="logo-apple" size={18} color="black" /> APPLE Release
+        </Text>
       </View>
+
+      <View style={styles.versionContainer}>
+    
+        <Text style={styles.contentText}>
+        v15.1.0.0 <Icon name="logo-google-playstore" size={18} color="black" /> ANDROID Release
+        </Text>
+      </View>
+      </View>
+    
     </ScrollView>
   );
 };
