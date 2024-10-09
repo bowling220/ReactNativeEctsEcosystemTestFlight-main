@@ -51,38 +51,41 @@ const ResourcePage = () => {
             );
         }
     }, [isConnected, navigation]);
-
     useEffect(() => {
         const fetchData = async () => {
             try {
                 console.log('Fetching data...');
-                const response = await axios.get('https://ects-cmp.com/appfeeds/ecosystem/resources.json');
+                const response = await axios.get(`https://ects-cmp.com/appfeeds/ecosystem/resources.json?timestamp=${new Date().getTime()}`);
                 console.log('Raw data:', response.data);
-                
-                // Ensure data is an object and not a string
+        
                 let fetchedData = response.data;
                 if (typeof fetchedData === 'string') {
                     fetchedData = JSON.parse(fetchedData);
                 }
         
                 if (fetchedData && typeof fetchedData === 'object' && fetchedData.games) {
+                    console.log('Number of games fetched:', fetchedData.games.length); // How many games were fetched
+        
                     const gamesWithImages = await Promise.all(fetchedData.games.map(async (game) => {
+                        console.log('Game:', game); // Log each game object to ensure data is coming in
+        
                         const imageUrl = game.image;
                         if (imageUrl) {
                             try {
                                 const imageResponse = await axios.get(imageUrl);
-                                game.imageData = imageResponse.data; // Storing image data in a separate key
+                                game.imageData = imageResponse.data;
                             } catch (error) {
-                                console.error('Error fetching image:', error);
+                                console.error(`Error fetching image for ${game.name}:`, error);
+                                game.imageData = null;
                             }
                         }
-                        return game;
+                        return game; // Return the updated game object
                     }));
         
-                    setData(gamesWithImages);
-                    console.log('Data set in state:', gamesWithImages);
+                    setData(gamesWithImages); // Update the data state with the array of games with images
                 } else {
-                    console.error('Fetched data is not valid:', fetchedData);
+                    // Handle case where no games are found
+                    console.warn('No games found in the fetched data');
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -91,6 +94,7 @@ const ResourcePage = () => {
             }
         };
         
+        
         if (isConnected) {
             fetchData();
         }
@@ -98,21 +102,22 @@ const ResourcePage = () => {
 
     const renderCards = (items) => {
         return items.map((item, index) => (
-            <PostCard2 // Use PostCard2 instead of PostCard
+            <PostCard2 
                 key={index}
                 title={item.name}
                 content={item.description}
                 linkUrl={item.url}
-                item={item} // Pass the whole item to PostCard2
+                item={item} 
             />
         ));
     };
+    
 
     const handlePagePress = (pageName) => {
         if (pageName === 'Home') {
             navigation.navigate('Home');
         } else if (pageName === 'Grades') {
-            navigation.navigate('Infinite Campus');
+            navigation.navigate('Grades');
         } else if (pageName === 'Website') {
             navigation.navigate('Ecosystem Website'); 
         } else if (pageName === 'DailyDiscussion') {
@@ -129,15 +134,14 @@ const ResourcePage = () => {
     return (
         <View style={styles.container}>
             {loading ? (
-                <View style={styles.loading}>
-                    <ActivityIndicator size="large" color="#0000ff" />
-                </View>
-            ) : (
-                <ScrollView style={styles.scrollView}>
-                    <Text style={styles.sectionTitle}>Games</Text>
-                    {data.length > 0 ? renderCards(data) : <Text>No items to display</Text>}
-                </ScrollView>
-            )}
+            <View style={styles.loading}>
+                <ActivityIndicator size="large" color="#0000ff" />
+            </View>
+        ) : (
+            <ScrollView style={styles.scrollView}>
+                {data.length > 0 ? renderCards(data) : <Text>No items to display</Text>}
+            </ScrollView>
+        )}
 
             <View style={styles.bottomNavigation}>
                 <TouchableOpacity style={styles.tabButton} onPress={() => handlePagePress('Home')}>
@@ -222,23 +226,18 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     moreMenu: {
+        backgroundColor: 'rgba(0,0,0,0.5)',
         position: 'absolute',
         bottom: 60,
-        right: 10,
-        backgroundColor: 'white',
-        borderRadius: 5,
+        right: 0,
         padding: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.8,
-        shadowRadius: 2,
-        elevation: 5,
+        borderRadius: 5,
     },
     moreMenuItem: {
         paddingVertical: 10,
     },
     moreMenuText: {
-        fontSize: 16,
+        color: 'white',
     },
 });
 

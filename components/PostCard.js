@@ -1,25 +1,22 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ScrollView, Linking, useWindowDimensions, ActivityIndicator, Share } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ScrollView, useWindowDimensions, ActivityIndicator, Share } from 'react-native';
 import HTML from 'react-native-render-html';
 import moment from 'moment';
 import { AntDesign } from '@expo/vector-icons';
 import { decode } from 'html-entities';
-import Animated, { Easing, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
-const PostCard = ({ title, content, linkUrl, item, author, pubDate }) => {
+const PostCard = ({ title, content, linkUrl, item, pubDate, categories = [] }) => {
     const [expanded, setExpanded] = useState(false);
+    const [categoriesExpanded, setCategoriesExpanded] = useState(false);
     const [loading, setLoading] = useState(true);
     const windowWidth = useWindowDimensions().width;
-    const slideAnim = useSharedValue(0); // Animation value for sliding
 
-    // Resize images in HTML content
     const resizeImagesInContent = (content, maxWidth) => {
         if (!content) return null;
         const imgRegex = /<img[^>]*src\s*=\s*['"]([^'"]+)['"][^>]*>/g;
         return content.replace(imgRegex, (match, url) => `<img src='${url}' style='max-width:${maxWidth}px; height:auto;'>`);
     };
 
-    // Extract the first image URL from content
     const extractImageUrl = (contentEncoded) => {
         if (!contentEncoded) return null;
         const imgRegex = /<img[^>]+src\s*=\s*['"]([^'"]+)['"][^>]*>/;
@@ -29,14 +26,13 @@ const PostCard = ({ title, content, linkUrl, item, author, pubDate }) => {
 
     const stripHtmlTags = (htmlContent) => {
         if (!htmlContent) return '';
-        // Remove all HTML tags
         return htmlContent.replace(/<\/?[^>]+(>|$)/g, '');
     };
 
     const handleShare = async (title, content) => {
         try {
             const googlePlayLink = 'https://play.google.com/store/apps/details?id=com.gmail.ectscmp.ecosystem&pcampaignid=web_share';
-            const testFlightLink = 'https://testflight.apple.com/join/vaqG7uk2';
+            const testFlightLink = 'https://apps.apple.com/us/app/ects-cmp-ecosystem/id6504026235';
 
             const plainContent = stripHtmlTags(content);
             const decodedContent = decode(plainContent);
@@ -44,7 +40,7 @@ const PostCard = ({ title, content, linkUrl, item, author, pubDate }) => {
 
             const result = await Share.share({
                 title: title,
-                message: `${title}\n\n${partialContent}\n\nDownload the app:\nGoogle Play Store: ${googlePlayLink}\nTestFlight: ${testFlightLink}`,
+                message: `${title}\n\n${partialContent}\n\nDownload the app:\nGoogle Play Store: ${googlePlayLink}\niOS: ${testFlightLink}`,
             });
 
             if (result.action === Share.sharedAction) {
@@ -61,49 +57,51 @@ const PostCard = ({ title, content, linkUrl, item, author, pubDate }) => {
         }
     };
 
-    // Prepare the content for rendering
     const resizedContent = resizeImagesInContent(content, windowWidth);
     const imageUrl = item && item.imageUrl ? item.imageUrl : extractImageUrl(content);
-
-    // Toggle modal visibility
-    const handlePress = () => setExpanded(!expanded);
-    const handleLinkPress = () => {
-        if (linkUrl) {
-            Linking.openURL(linkUrl);
-        }
-    };
-
-    // Format publication date
+    const handleModalToggle = () => setExpanded(!expanded);
     const formattedPubDate = pubDate ? moment(pubDate).format('MMMM D, YYYY [at] h:mm A') : 'Date not available';
-
-    // Animated style
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-            transform: [{ translateY: slideAnim.value }],
-        };
-    });
-
-    // Trigger animation when modal opens
-    React.useEffect(() => {
-        slideAnim.value = withSpring(expanded ? 0 : 40, { damping: 7, stiffness: 75 });
-    }, [expanded]);
 
     return (
         <View style={styles.card}>
             <View style={styles.header}>
                 <Text style={styles.title}>{title || 'No Title'}</Text>
-                {author && <Text style={styles.author}>By {author}</Text>}
+                
+                <View style={styles.categoryContainer}>
+                    {Array.isArray(categories) && categories.length > 0 ? ( // Check if categories is an array
+                        <>
+                            <Text style={styles.category}>{categories[0]}</Text>
+                            {categories.length > 1 && (
+                                <>
+                                    <TouchableOpacity onPress={() => setCategoriesExpanded(!categoriesExpanded)}>
+                                        <Text style={styles.moreButton}>
+                                            {categoriesExpanded ? 'Hide categories' : `+ ${categories.length - 1} more`}
+                                        </Text>
+                                    </TouchableOpacity>
+                                    {categoriesExpanded && (
+                                        <View style={styles.additionalCategories}>
+                                            {categories.slice(1).map((category, index) => (
+                                                <Text key={index} style={styles.category}>{category}</Text>
+                                            ))}
+                                        </View>
+                                    )}
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        <Text style={styles.noCategoriesText}>No categories</Text> // Display if there are no categories
+                    )}
+                                    <Text style={styles.pubDate}>{formattedPubDate}</Text>
+ 
+                </View>
+    
+                <TouchableOpacity style={styles.shareButton} onPress={() => handleShare(title, content)}>
+                    <AntDesign name="sharealt" size={24} color="#fff" />
+                    <Text style={styles.shareButtonText}>Share</Text>
+                </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-                style={styles.shareButton}
-                onPress={() => handleShare(title, content)}
-            >
-                <AntDesign name="sharealt" size={24} color="#fff" />
-                <Text style={styles.shareButtonText}>Share</Text>
-            </TouchableOpacity>
-
-            {!expanded && imageUrl && (
+    
+            {imageUrl && (
                 <Image
                     source={{ uri: imageUrl }}
                     style={styles.image}
@@ -111,17 +109,23 @@ const PostCard = ({ title, content, linkUrl, item, author, pubDate }) => {
                     onError={() => setLoading(false)}
                 />
             )}
-            {loading && !expanded && <ActivityIndicator style={styles.loader} size="small" color="#fff" />}
-            <TouchableOpacity onPress={handlePress} style={styles.button} accessibilityLabel={expanded ? 'Close content' : 'Show more content'} accessibilityRole="button">
-                <Text style={styles.buttonText}>{expanded ? 'Close' : 'Show more'}</Text>
+            {loading && <ActivityIndicator style={styles.loader} size="small" color="#fff" />}
+    
+            <TouchableOpacity onPress={handleModalToggle}>
+                <Text style={styles.readMoreButton}>Read More</Text>
             </TouchableOpacity>
-            <Modal visible={expanded} animationType="none" transparent={true}>
-                <Animated.View style={[styles.modalContent, animatedStyle]}>
-                    <TouchableOpacity onPress={handlePress} style={styles.closeButton} accessibilityLabel="Close modal" accessibilityRole="button">
-                        <Text style={styles.closeButtonText}>Close</Text>
+    
+            <Modal visible={expanded} animationType="slide" transparent={true}>
+                <View style={styles.modalContent}>
+                    <TouchableOpacity onPress={handleModalToggle} style={styles.closeButton}>
+                        <View style={styles.closeButtonArea}>
+                            <Text style={styles.closeButtonText}>Close</Text>
+                        </View>
                     </TouchableOpacity>
                     <Text style={styles.modalTitle}>{title || 'No Title'}</Text>
-                    <ScrollView contentContainerStyle={styles.scrollView}>
+                    <Text style={styles.modalDate}>{formattedPubDate}</Text>
+    
+                    <ScrollView contentContainerStyle={styles.scrollView} showsVerticalScrollIndicator={false}>
                         {resizedContent ? (
                             <HTML
                                 source={{ html: resizedContent }}
@@ -132,16 +136,12 @@ const PostCard = ({ title, content, linkUrl, item, author, pubDate }) => {
                         ) : (
                             <Text style={styles.errorText}>Content could not be rendered.</Text>
                         )}
-                        {linkUrl && (
-                            <TouchableOpacity onPress={handleLinkPress} style={styles.linkButton} accessibilityLabel="Open external link" accessibilityRole="button">
-                                <Text style={styles.linkButtonText}>Open Link</Text>
-                            </TouchableOpacity>
-                        )}
                     </ScrollView>
-                </Animated.View>
+                </View>
             </Modal>
         </View>
     );
+    
 };
 
 const styles = StyleSheet.create({
@@ -157,9 +157,13 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 4,
+        overflow: 'hidden', // Prevent horizontal overflow
+    },
+    additionalCategories: {
+        marginTop: 5,
     },
     header: {
-        marginBottom: 10,
+        marginBottom: 0,
     },
     image: {
         width: '100%',
@@ -177,25 +181,31 @@ const styles = StyleSheet.create({
         color: '#333',
         marginBottom: 5,
     },
-    author: {
-        fontSize: 16,
+    categoryContainer: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+    },
+    category: {
+        fontSize: 14,
+        color: '#00000',
+        marginBottom: 0,
+    },
+    noCategoriesText: {
+        fontSize: 14,
+        color: 'gray',
         fontStyle: 'italic',
-        color: '#666',
         marginBottom: 5,
+    },
+    moreButton: {
+        fontSize: 14,
+        color: '#007BFF',
+        fontWeight: 'bold',
+        marginTop: 5,
     },
     pubDate: {
         fontSize: 14,
         color: '#888',
         marginBottom: 10,
-    },
-    button: {
-        alignSelf: 'flex-end',
-        marginTop: 5,
-        padding: 10,
-    },
-    buttonText: {
-        color: '#007BFF',
-        fontWeight: 'bold',
     },
     shareButton: {
         flexDirection: 'row',
@@ -211,67 +221,65 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     shareButtonText: {
-        color: 'white',
+        color: '#fff',
         marginLeft: 5,
         fontWeight: 'bold',
     },
-    modalContent: {
-        flex: 1,
-        backgroundColor: '#fff',
-        marginTop: 'auto',
-        padding: 20,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+    readMoreButton: {
+        backgroundColor: '#007BFF',
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginTop: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 8,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
         elevation: 5,
     },
-    closeButton: {
-        alignSelf: 'flex-end',
-        padding: 10,
-        backgroundColor: '#007BFF', // Use a background color to make it stand out
-        borderRadius: 5, // Rounded corners
-        marginBottom: 5,
-        marginTop: 18,
-    },
-    closeButtonText: {
-        color: '#fff',
-        fontSize: 13, // Increase font size for better readability
-        fontWeight: 'bold',
-    },
     
-    modalTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 10,
-    },
-    modalDate: {
-        fontSize: 14,
-        color: '#888',
-        marginBottom: 20,
+    
+    modalContent: {
+        flex: 1,
+        padding: 20,
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
     },
     scrollView: {
         paddingBottom: 20,
     },
-    linkButton: {
-        marginTop: 20,
-        padding: 10,
-        backgroundColor: '#007BFF',
-        borderRadius: 5,
+    closeButton: {
+        marginTop:15,
+        marginBottom: 10,
     },
-    linkButtonText: {
+    closeButtonArea: {
+        padding: 10,
+        backgroundColor: '#ff4c4c',
+        borderRadius: 25,
+        alignItems: 'center',
+    },
+    closeButtonText: {
         color: '#fff',
-        textAlign: 'center',
         fontWeight: 'bold',
     },
-    errorText: {
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    modalDate: {
         fontSize: 16,
-        color: '#ff0000',
+        color: '#888',
+        marginBottom: 20,
+    },
+    errorText: {
+        color: 'red',
+        fontSize: 16,
         textAlign: 'center',
-        marginTop: 20,
     },
 });
 

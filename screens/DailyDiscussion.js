@@ -14,7 +14,7 @@ const DailyDiscussionFragment = ({ navigation }) => {
         if (pageName === 'Home') {
             navigation.navigate('Home');
         } else if (pageName === 'Grades') {
-            navigation.navigate('Infinite Campus');
+            navigation.navigate('Grades');
         } else if (pageName === 'Website') {
             navigation.navigate('Ecosystem Website');
         } else if (pageName === 'DailyDiscussion') {
@@ -151,23 +151,18 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
     },
     moreMenu: {
+        backgroundColor: 'rgba(0,0,0,0.5)',
         position: 'absolute',
         bottom: 60,
-        right: 10,
-        backgroundColor: 'white',
-        borderRadius: 5,
+        right: 0,
         padding: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.8,
-        shadowRadius: 2,
-        elevation: 5,
+        borderRadius: 5,
     },
-    moreMenuItem: {
+      moreMenuItem: {
         paddingVertical: 10,
-    },
-    moreMenuText: {
-        fontSize: 16,
+      },
+      moreMenuText: {
+        color: 'white',
     },
 });
 

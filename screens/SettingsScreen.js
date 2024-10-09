@@ -10,14 +10,23 @@ const SettingsScreen = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  // Sync settings with AsyncStorage
   const fetchSettings = async () => {
     try {
+      // Fetch notifications setting
       const notificationsValue = await AsyncStorage.getItem('notificationsEnabled');
-      if (notificationsValue !== null) setNotificationsEnabled(JSON.parse(notificationsValue));
+      if (notificationsValue !== null) {
+        setNotificationsEnabled(JSON.parse(notificationsValue));
+      }
 
+      // Fetch dark mode setting
       const darkModeValue = await AsyncStorage.getItem('darkMode');
-      if (darkModeValue !== null && JSON.parse(darkModeValue) !== isDarkMode) toggleTheme();
+      if (darkModeValue !== null) {
+        const shouldBeDarkMode = JSON.parse(darkModeValue);
+        // Set the theme if the loaded value is different
+        if (shouldBeDarkMode !== isDarkMode) {
+          toggleTheme(); // Toggle only if the stored value differs from current theme
+        }
+      }
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -29,7 +38,9 @@ const SettingsScreen = () => {
 
   const toggleDarkMode = async () => {
     try {
+      // Toggle the theme
       toggleTheme();
+      // Save the new state in AsyncStorage
       await AsyncStorage.setItem('darkMode', JSON.stringify(!isDarkMode));
     } catch (error) {
       console.error('Error saving dark mode setting:', error);

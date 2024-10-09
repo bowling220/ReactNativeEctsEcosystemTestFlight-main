@@ -1,14 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, Linking, TouchableOpacity, ScrollView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/Ionicons'; // You can use any other icon set as well
-
+import Icon from 'react-native-vector-icons/Ionicons'; 
+import { useTheme } from '../context/ThemeContext'; // Importing the Theme Context
 
 const AboutScreen = () => {
+  const { isDarkMode } = useTheme(); // Using the Theme Context
   const developerName = "Blaine Oler";
   const contactEmail = "ectscmp@gmail.com";
   const appDescription = "This app is designed to provide a central place to access key resources in the ECTS CMP program. Developed and managed by EctsCMP.";
-  const licenseUrl = "https://opensource.org/licenses/MIT"; // License link
+  const licenseUrl = "https://opensource.org/licenses/MIT";
 
   const handleEmailPress = () => {
     Linking.openURL(`mailto:${contactEmail}?subject=Questions%20or%20Concerns&body=Dear%20EctsCMP,`);
@@ -19,93 +20,83 @@ const AboutScreen = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container(isDarkMode)}>
       <Image source={require('../assets/icon.png')} style={styles.logo} />
-      <Text style={styles.header}>About</Text>
+      <Text style={styles.header(isDarkMode)}>About</Text>
 
-      <View style={styles.contentContainer}>
-        <Text style={styles.contentText}>{appDescription}</Text>
+      <View style={styles.contentContainer(isDarkMode)}>
+        <Text style={styles.contentText(isDarkMode)}>{appDescription}</Text>
 
-                {/* Developer Section with Verified Icon */}
-                <Text style={styles.sectionTitle}>Contributors</Text>
+        <Text style={styles.sectionTitle(isDarkMode)}>Contributors</Text>
         <View style={styles.developerContainer}>
-          <Text style={styles.developerName}>{developerName}</Text>
+          <Text style={styles.developerName(isDarkMode)}>{developerName}</Text>
           <Ionicons name="checkmark-circle" size={20} color="#1DA1F2" style={styles.verifiedIcon} />
         </View>
 
-
- 
-        <Text style={styles.sectionTitle}>Contact</Text>
-
+        <Text style={styles.sectionTitle(isDarkMode)}>Contact</Text>
         <TouchableOpacity onPress={handleEmailPress}>
-
-          <Text style={styles.contactEmail}>
-             {contactEmail}</Text>
+          <Text style={styles.contactEmail(isDarkMode)}>{contactEmail}</Text>
         </TouchableOpacity>
 
-        {/* Features Section */}
-        <Text style={styles.sectionTitle}>Key Features</Text>
-        <Text style={styles.contentText}>✓ Easy access to key resources.</Text>
-        <Text style={styles.contentText}>✓ User-friendly navigation.</Text>
-        <Text style={styles.contentText}>✓ Dark mode support.</Text>
+        <Text style={styles.sectionTitle(isDarkMode)}>Key Features</Text>
+        <Text style={styles.contentText(isDarkMode)}>✓ Easy access to key resources.</Text>
+        <Text style={styles.contentText(isDarkMode)}>✓ User-friendly navigation.</Text>
+        <Text style={styles.contentText(isDarkMode)}>✓ Dark mode support.</Text>
 
-        {/* License Section */}
-        <Text style={styles.sectionTitle}>License</Text>
+        <Text style={styles.sectionTitle(isDarkMode)}>License</Text>
         <TouchableOpacity onPress={() => handleOpenLink(licenseUrl)}>
-          <Text style={styles.linkText}>MIT License</Text>
+          <Text style={styles.linkText(isDarkMode)}>MIT License</Text>
         </TouchableOpacity>
 
-        {/* Social Media Links */}
-        <Text style={styles.sectionTitle2}>Check the Source Code for This App Here</Text>
+        <Text style={styles.sectionTitle2(isDarkMode)}>Check the Source Code for This App Here</Text>
         <View style={styles.socialIcons}>
           <TouchableOpacity onPress={() => handleOpenLink('https://github.com/bowling220')}>
             <Ionicons name="logo-github" size={30} color="#000" />
           </TouchableOpacity>
         </View>
 
-        
-      {/* Version Section */}
-      <Text style={styles.sectionTitle}>VERSION</Text>
-      <View style={styles.versionContainer}>
-        <Text style={styles.contentText}>
-        v1.1.0.0 <Icon name="logo-apple" size={18} color="black" /> APPLE Release
-        </Text>
-      </View>
+        <Text style={styles.sectionTitle(isDarkMode)}>VERSION</Text>
+        <View style={styles.versionContainer}>
+        <View style={styles.versionContainer}>
+  <Text style={styles.contentText(isDarkMode)}>
+    v1.0.1 <Icon name="logo-apple" size={18} color={isDarkMode ? "white" : "black"} /> APPLE Release
+  </Text>
+</View>
+<View style={styles.versionContainer}>
+  <Text style={styles.contentText(isDarkMode)}>
+    v1.0.1 <Icon name="logo-google-playstore" size={18} color={isDarkMode ? "white" : "black"} /> ANDROID Release
+  </Text>
+</View>
 
-      <View style={styles.versionContainer}>
-    
-        <Text style={styles.contentText}>
-        v15.1.0.0 <Icon name="logo-google-playstore" size={18} color="black" /> ANDROID Release
-        </Text>
+        </View>
       </View>
-      </View>
-    
     </ScrollView>
   );
 };
 
+// Update styles to take isDarkMode as an argument
 const styles = StyleSheet.create({
-  container: {
+  container: (isDarkMode) => ({
     flexGrow: 1,
     padding: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: isDarkMode ? '#121212' : '#f0f0f0', // Dark mode background
     justifyContent: 'center',
     alignItems: 'center',
-  },
+  }),
   logo: {
     width: 100,
     height: 100,
     marginBottom: 20,
   },
-  header: {
+  header: (isDarkMode) => ({
     fontSize: 30,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#333',
+    color: isDarkMode ? '#fff' : '#333', // Text color for dark mode
     textAlign: 'center',
-  },
-  contentContainer: {
-    backgroundColor: '#fff',
+  }),
+  contentContainer: (isDarkMode) => ({
+    backgroundColor: isDarkMode ? '#1E1E1E' : '#fff', // Dark mode background
     padding: 20,
     borderRadius: 10,
     shadowColor: '#000',
@@ -115,64 +106,58 @@ const styles = StyleSheet.create({
     elevation: 5,
     alignItems: 'center',
     width: '100%',
-  },
-  contentText: {
+  }),
+  contentText: (isDarkMode) => ({
     fontSize: 18,
-    color: '#555',
+    color: isDarkMode ? '#ccc' : '#555', // Text color for dark mode
     marginBottom: 10,
     textAlign: 'center',
-  },
-  sectionTitle: {
+  }),
+  sectionTitle: (isDarkMode) => ({
     fontSize: 22,
     fontWeight: 'bold',
     marginTop: 20,
-    color: '#333',
-  },
-  sectionTitle2: {
+    color: isDarkMode ? '#fff' : '#333', // Section title color for dark mode
+  }),
+  sectionTitle2: (isDarkMode) => ({
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 20,
-    color: '#333',
-    textAlign: 'center', // Center the text
-  },
-  
+    color: isDarkMode ? '#fff' : '#333', // Section title color for dark mode
+    textAlign: 'center',
+  }),
   developerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
   },
-  developerName: {
+  developerName: (isDarkMode) => ({
     fontWeight: 'bold',
-    color: '#007bff',
+    color: isDarkMode ? '#007bff' : '#007bff', // Keep the color the same, adjust as needed
     fontSize: 18,
-  },
+  }),
   verifiedIcon: {
     marginLeft: 5,
   },
-  version: {
+  contactEmail: (isDarkMode) => ({
     fontWeight: 'bold',
-    color: '#28a745',
-  },
-  contactEmail: {
-    fontWeight: 'bold',
-    color: '#d9534f',
+    color: isDarkMode ? '#d9534f' : '#d9534f', // Keep the color the same
     textDecorationLine: 'underline',
-  },
-  linkText: {
-    color: '#007bff',
+  }),
+  linkText: (isDarkMode) => ({
+    color: isDarkMode ? '#007bff' : '#007bff', // Keep the color the same
     fontWeight: 'bold',
     textDecorationLine: 'underline',
     fontSize: 18,
     textAlign: 'center',
-  },
+  }),
   socialIcons: {
     flexDirection: 'row',
     marginTop: 15,
   },
-  socialIcon: {
-    marginLeft: 15,
+  versionContainer: {
+    marginTop: 10,
   },
 });
-
 
 export default AboutScreen;

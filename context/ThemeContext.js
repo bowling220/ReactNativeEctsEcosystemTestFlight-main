@@ -67,6 +67,19 @@ const lightTheme = {
     fontSize: 12,
     marginTop: 5,
   },
+  sectionTitle: {
+    color: '#000',
+  },
+  developerName: {
+    color: '#007bff',
+  },
+  contactEmail: {
+    color: '#d9534f',
+  },
+  linkText: {
+    color: '#007bff',
+  },
+
 };
 
 const darkTheme = {
@@ -115,5 +128,14 @@ const darkTheme = {
     color: 'white',
     fontSize: 12,
     marginTop: 5,
+  },
+  developerName: {
+    color: '#1DA1F2',
+  },
+  contactEmail: {
+    color: '#d9534f',
+  },
+  linkText: {
+    color: '#007bff',
   },
 };

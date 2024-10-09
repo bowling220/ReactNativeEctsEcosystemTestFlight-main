@@ -176,24 +176,19 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   moreMenu: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
     position: 'absolute',
     bottom: 60,
-    right: 10,
-    backgroundColor: 'white',
-    borderRadius: 5,
+    right: 0,
     padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    elevation: 5,
-  },
+    borderRadius: 5,
+},
   moreMenuItem: {
     paddingVertical: 10,
   },
   moreMenuText: {
-    fontSize: 16,
-  },
+    color: 'white',
+},
 });
 
 export default DailyDiscussion;

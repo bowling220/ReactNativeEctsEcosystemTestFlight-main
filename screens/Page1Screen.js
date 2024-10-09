@@ -173,23 +173,18 @@ const styles = StyleSheet.create({
         zIndex: 1, // Ensure the button is above the WebView
     },
     moreMenu: {
+        backgroundColor: 'rgba(0,0,0,0.5)',
         position: 'absolute',
         bottom: 60,
-        right: 10,
-        backgroundColor: 'white',
-        borderRadius: 5,
+        right: 0,
         padding: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.8,
-        shadowRadius: 2,
-        elevation: 5,
+        borderRadius: 5,
     },
-    moreMenuItem: {
+      moreMenuItem: {
         paddingVertical: 10,
-    },
-    moreMenuText: {
-        fontSize: 16,
+      },
+      moreMenuText: {
+        color: 'white',
     },
 });
 
