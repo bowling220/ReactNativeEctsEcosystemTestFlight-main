@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, ActivityIndicator, TouchableOpacity, Animated, StyleSheet, Alert, BackHandler, Text } from 'react-native';
+import { View, FlatList, ActivityIndicator, TouchableOpacity, Animated, StyleSheet, Alert, Text, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { fetchPosts } from '../services/api';
 import PostCard from '../components/PostCard';
@@ -21,12 +21,10 @@ const HomeScreen = () => {
     const [isConnected, setIsConnected] = useState(true);
     const [showMore, setShowMore] = useState(false);
     const [showForm, setShowForm] = useState(false); // State for WebView
+    const [refreshing, setRefreshing] = useState(false); // Refreshing state
 
     // Animated value initialization
     const animatedValue = new Animated.Value(0);
-
-
-
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
@@ -57,6 +55,7 @@ const HomeScreen = () => {
                 console.error('Error fetching posts:', error);
             } finally {
                 setLoading(false);
+                setRefreshing(false); // End the refreshing state
             }
         };
 
@@ -110,7 +109,6 @@ const HomeScreen = () => {
         return match && match.length >= 2 ? match[1] : null;
     };
 
-    
     const renderPost = ({ item }) => (
         <PostCard
             title={item.title}
@@ -121,9 +119,10 @@ const HomeScreen = () => {
             categories={item.category || []}
         />
     );
+
     const handlePagePress = (pageName) => {
         navigation.navigate(pageName);
-      };
+    };
 
     // Handle swipe gestures
     const onGestureEvent = Animated.event(
@@ -146,6 +145,11 @@ const HomeScreen = () => {
         navigation.navigate(pageName);
     };
 
+    const onRefresh = () => {
+        setRefreshing(true); // Start the refreshing state
+        setPage(1); // Reset the page to 1 to refresh data
+    };
+
     return (
         <PanGestureHandler
             onGestureEvent={onGestureEvent}
@@ -158,6 +162,12 @@ const HomeScreen = () => {
                     keyExtractor={(item, index) => index.toString()}
                     onEndReached={handleLoadMore}
                     onEndReachedThreshold={0.1}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                        />
+                    }
                     ListFooterComponent={
                         hasMore && isConnected && (
                             <TouchableOpacity style={styles.loadMoreButton} onPress={handleLoadMore} disabled={loading}>
@@ -166,9 +176,6 @@ const HomeScreen = () => {
                         )
                     }
                 />
-
-
-
 
                 <View style={styles.bottomNavigation}>
                     <TouchableOpacity style={styles.tabButton} onPress={() => navigateToPage('Home')}>
@@ -187,25 +194,23 @@ const HomeScreen = () => {
                         <AntDesign name="bars" size={24} color="white" />
                         <Text style={styles.tabText}>More</Text>
                     </TouchableOpacity>
-
-
                 </View>
 
                 {showMore && (
                     <View style={styles.moreMenu}>
-                    <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Games')}>
-                      <Text style={styles.moreMenuText}>Games</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Tools')}>
-                      <Text style={styles.moreMenuText}>Tools</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Links')}>
-                      <Text style={styles.moreMenuText}>Links</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('DailyDiscussion')}>
-                      <Text style={styles.moreMenuText}>Daily Discussion</Text>
-                    </TouchableOpacity>
-                  </View>
+                        <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Games')}>
+                            <Text style={styles.moreMenuText}>Games</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Tools')}>
+                            <Text style={styles.moreMenuText}>Tools</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Links')}>
+                            <Text style={styles.moreMenuText}>Links</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('DailyDiscussion')}>
+                            <Text style={styles.moreMenuText}>Daily Discussion</Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
             </Animated.View>
         </PanGestureHandler>
@@ -222,7 +227,6 @@ const styles = StyleSheet.create({
         height: '100%', // You can explicitly set this as well
         marginTop: 20,
     },
-    
     bottomNavigation: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -241,14 +245,17 @@ const styles = StyleSheet.create({
         color: 'white',
     },
     loadMoreButton: {
-        padding: 10,
-        backgroundColor: '#007BFF',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        backgroundColor: '#007AFF',
+        borderRadius: 5,
         alignItems: 'center',
-        marginVertical: 10,
+        marginVertical: 20,
+        alignSelf: 'center',
     },
     loadMoreText: {
         color: 'white',
-        fontWeight: 'bold',
+        fontSize: 16,
     },
     moreMenu: {
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -258,10 +265,10 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 5,
     },
-    moreMenuItem: {
-        padding: 10,
-    },
-    moreMenuText: {
+      moreMenuItem: {
+        paddingVertical: 10,
+      },
+      moreMenuText: {
         color: 'white',
     },
 });

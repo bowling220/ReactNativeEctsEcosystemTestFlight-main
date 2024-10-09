@@ -50,10 +50,11 @@ const AboutScreen = () => {
 
         <Text style={styles.sectionTitle2(isDarkMode)}>Check the Source Code for This App Here</Text>
         <View style={styles.socialIcons}>
-          <TouchableOpacity onPress={() => handleOpenLink('https://github.com/bowling220')}>
-            <Ionicons name="logo-github" size={30} color="#000" />
-          </TouchableOpacity>
-        </View>
+  <TouchableOpacity onPress={() => handleOpenLink('https://github.com/bowling220/ReactNativeEctsEcosystemTestFlight-main')}>
+    <Ionicons name="logo-github" size={30} color={isDarkMode ? "white" : "black"} />
+  </TouchableOpacity>
+</View>
+
 
         <Text style={styles.sectionTitle(isDarkMode)}>VERSION</Text>
         <View style={styles.versionContainer}>
