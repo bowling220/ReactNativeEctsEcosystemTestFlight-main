@@ -2,11 +2,16 @@
   "expo": {
     "name": "EctsEcosystem",
     "slug": "EctsEcosystem",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "sdkVersion": "51.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "notification": {
+      "icon": "./assets/notification-icon.png", 
+      "color": "#000000", 
+      "iosDisplayInForeground": true
+    },
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "cover",
@@ -18,20 +23,20 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ectscmp.EctsEcosystem",
-      "buildNumber": "11",
+      "buildNumber": "12",
       "permissions": ["INTERNET"]
 
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff",
         "autoIncrement": true,
         "permissions": ["INTERNET"]
 
       },
       "package": "com.gmail.ectscmp.ecosystem",
-      "versionCode": 17
+      "versionCode": 18
     },
     "web": {
       "favicon": "./assets/favicon.png"

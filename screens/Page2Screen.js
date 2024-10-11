@@ -161,20 +161,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: 'black',
-    paddingVertical: 10,
+    paddingBottom: 20,  // Keep the bottom padding as is
+    paddingTop: 10,     // Reduce the top padding
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-  },
-  tabButton: {
+},
+
+tabButton: {
     alignItems: 'center',
-  },
-  tabText: {
+},
+tabText: {
     color: 'white',
     fontSize: 12,
-    marginTop: 5,
-  },
+},
   moreMenu: {
     backgroundColor: 'rgba(0,0,0,0.5)',
     position: 'absolute',

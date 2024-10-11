@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, TouchableOpacity, Animated, Easing, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, TouchableOpacity, Animated, Easing, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from 'react-native-vector-icons';
@@ -14,23 +14,35 @@ import Links from './screens/CompanionsScreen';
 import AboutScreen from './screens/AboutScreen';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GestureHandlerRootView } from 'react-native-gesture-handler'; // Import GestureHandlerRootView
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Notifications from 'expo-notifications';
+import * as Permissions from 'expo-permissions';
 
 const Stack = createStackNavigator();
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 const AppNavigator = () => {
   const { theme, isDarkMode, toggleTheme } = useTheme();
-  const [layout, setLayout] = React.useState('list'); // State for layout
+  const [layout, setLayout] = useState('list');
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const notificationListener = useRef();
+  const responseListener = useRef();
 
   // Fetch settings from AsyncStorage
   const fetchSettings = async () => {
     try {
-      // Fetch dark mode setting
       const darkModeValue = await AsyncStorage.getItem('darkMode');
       if (darkModeValue !== null) {
         const shouldBeDarkMode = JSON.parse(darkModeValue);
         if (shouldBeDarkMode !== isDarkMode) {
-          toggleTheme(); // Toggle theme if the stored value differs
+          toggleTheme();
         }
       }
     } catch (error) {
@@ -40,39 +52,50 @@ const AppNavigator = () => {
 
   useEffect(() => {
     fetchSettings();
+    registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
+
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification Received:', notification);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification Response:', response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(notificationListener.current);
+      Notifications.removeNotificationSubscription(responseListener.current);
+    };
   }, []);
 
   const toggleLayout = () => {
     setLayout((prevLayout) => {
       if (prevLayout === 'list') return 'card';
       if (prevLayout === 'card') return 'grid2x2';
-      return 'list'; // If it's grid2x2, go back to list
+      return 'list';
     });
   };
 
   // Spinning icon component
   const SpinningIcon = () => {
-    const spinValue = React.useRef(new Animated.Value(0)).current;
+    const spinValue = useRef(new Animated.Value(0)).current;
 
-    React.useEffect(() => {
-      // Define the spin animation
+    useEffect(() => {
       const spinAnimation = Animated.loop(
         Animated.timing(spinValue, {
           toValue: 1,
-          duration: 4000, // 2 seconds for a full rotation
-          easing: Easing.linear, // Ensures smooth, continuous rotation
-          useNativeDriver: true, // Use native driver for better performance
+          duration: 4000,
+          easing: Easing.linear,
+          useNativeDriver: true,
         })
       );
 
-      // Start the animation
       spinAnimation.start();
     }, [spinValue]);
 
-    // Interpolate spinValue to create the rotation
     const spin = spinValue.interpolate({
       inputRange: [0, 1],
-      outputRange: ['0deg', '360deg'], // Full rotation from 0 to 360 degrees
+      outputRange: ['0deg', '360deg'],
     });
 
     return (
@@ -80,7 +103,7 @@ const AppNavigator = () => {
         <Ionicons 
           name="settings-outline" 
           size={24} 
-          color={isDarkMode ? 'white' : 'black'} // Change color based on dark mode
+          color={isDarkMode ? 'white' : 'black'} 
         />
       </Animated.View>
     );
@@ -115,72 +138,43 @@ const AppNavigator = () => {
           {(props) => <HomeScreen {...props} layout={layout} toggleLayout={toggleLayout} />}
         </Stack.Screen>
 
-        <Stack.Screen
-          name="Ecosystem Website"
-          component={Page1Screen}
-          options={{
-            cardStyle: { backgroundColor: '#f5f5f5' }, // Light gray for Ecosystem Website
-          }}
-        />
-
-        <Stack.Screen
-          name="Grades"
-          component={Page2Screen}
-          options={{
-            cardStyle: { backgroundColor: '#d3e8ff' }, // Light blue for Grades
-          }}
-        />
-
-        <Stack.Screen
-          name="Games"
-          component={Games}
-          options={{
-            cardStyle: { backgroundColor: '#ffe4b2' }, // Light orange for Games
-          }}
-        />
-
-        <Stack.Screen
-          name="DailyDiscussion"
-          component={DailyDiscussion}
-          options={{
-            cardStyle: { backgroundColor: '#f0e4ff' }, // Light purple for Daily Discussion
-          }}
-        />
-
-        <Stack.Screen
-          name="Tools"
-          component={Tools}
-          options={{
-            cardStyle: { backgroundColor: '#e4ffcc' }, // Light green for Tools
-          }}
-        />
-
-        <Stack.Screen
-          name="Links"
-          component={Links}
-          options={{
-            cardStyle: { backgroundColor: '#ccffec' }, // Light teal for Links
-          }}
-        />
-
-        <Stack.Screen
-          name="Settings"
-          component={SettingsScreen}
-          options={{
-            cardStyle: { backgroundColor: '#ffefcc' }, // Light yellow for Settings
-          }}
-        />
-
-        <Stack.Screen
-          name="About"
-          component={AboutScreen}
-          options={{
-            cardStyle: { backgroundColor: '#ffcccc' }, // Light pink for About
-          }}
-        />
+        <Stack.Screen name="Ecosystem Website" component={Page1Screen} />
+        <Stack.Screen name="Grades" component={Page2Screen} />
+        <Stack.Screen name="Games" component={Games} />
+        <Stack.Screen name="DailyDiscussion" component={DailyDiscussion} />
+        <Stack.Screen name="Tools" component={Tools} />
+        <Stack.Screen name="Links" component={Links} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
       </Stack.Navigator>
     </GestureHandlerRootView>
   );
+};
+
+const registerForPushNotificationsAsync = async () => {
+  let token;
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+
+  const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
+  let finalStatus = existingStatus;
+  if (existingStatus !== 'granted') {
+    const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+    finalStatus = status;
+  }
+  if (finalStatus !== 'granted') {
+    alert('Failed to get push token for push notification!');
+    return;
+  }
+  token = (await Notifications.getExpoPushTokenAsync()).data;
+  console.log(token);
+  return token;
 };
 
 const App = () => {
