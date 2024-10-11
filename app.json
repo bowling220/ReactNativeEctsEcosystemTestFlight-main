@@ -21,20 +21,27 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.ectscmp.EctsEcosystem",
-      "buildNumber": "12",
-      "permissions": ["INTERNET"]
-
-    },
+  "supportsTablet": true,
+  "bundleIdentifier": "com.ectscmp.EctsEcosystem",
+  "buildNumber": "12",
+  "permissions": ["INTERNET"],
+  "infoPlist": {
+    "UIBackgroundModes": ["fetch", "remote-notification"],
+    "NSAppTransportSecurity": {
+      "NSAllowsArbitraryLoads": true
+    }
+  }
+},
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#ffffff",
-        "autoIncrement": true,
-        "permissions": ["INTERNET"]
-
+        "backgroundColor": "#ffffff"
       },
+      "notification": {
+        "sound": "notification.mp3" 
+      },
+      "permissions": ["INTERNET"] 
+    },
       "package": "com.gmail.ectscmp.ecosystem",
       "versionCode": 18
     },
@@ -48,4 +55,5 @@
     },
     "owner": "ectscmp"
   }
-}
+
+

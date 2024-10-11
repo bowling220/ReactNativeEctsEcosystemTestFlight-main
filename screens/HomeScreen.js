@@ -5,8 +5,6 @@ import { fetchPosts } from '../services/api';  // Ensure fetchPosts supports abo
 import PostCard from '../components/PostCard';
 import { AntDesign } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 
 const HomeScreen = () => {
     const navigation = useNavigation();
@@ -18,20 +16,6 @@ const HomeScreen = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [refreshTimedOut, setRefreshTimedOut] = useState(false);
     const [showMore, setShowMore] = useState(false);
-
-    // Request notification permissions when the app starts
-    useEffect(() => {
-        registerForPushNotificationsAsync();
-    }, []);
-
-    // Listen for new notifications
-    useEffect(() => {
-        const subscription = Notifications.addNotificationReceivedListener(notification => {
-            console.log('Notification Received:', notification);
-        });
-
-        return () => subscription.remove();
-    }, []);
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
@@ -80,9 +64,6 @@ const HomeScreen = () => {
                     if (freshPosts.length > 0) {
                         setPosts(prevPosts => [...freshPosts, ...prevPosts]);
                         setFilteredPosts(prevFiltered => [...freshPosts, ...prevFiltered]);
-
-                        // Trigger a notification for the new posts
-                        sendNotification(freshPosts.length);
                     }
                 } else {
                     if (pageNumber === 1) {
@@ -112,35 +93,6 @@ const HomeScreen = () => {
         const regex = /<img[^>]+src="([^">]+)/g;
         const match = regex.exec(contentEncoded);
         return match && match.length >= 2 ? match[1] : null;
-    };
-
-    const sendNotification = async (newPostCount) => {
-        await Notifications.scheduleNotificationAsync({
-            content: {
-                title: "New Posts Available",
-                body: `${newPostCount} new post${newPostCount > 1 ? 's' : ''} just arrived!`,
-            },
-            trigger: { seconds: 1 },
-        });
-    };
-
-    const registerForPushNotificationsAsync = async () => {
-        if (Device.isDevice) {
-            const { status: existingStatus } = await Notifications.getPermissionsAsync();
-            let finalStatus = existingStatus;
-
-            if (existingStatus !== 'granted') {
-                const { status } = await Notifications.requestPermissionsAsync();
-                finalStatus = status;
-            }
-
-            if (finalStatus !== 'granted') {
-                Alert.alert('Failed to get push token for push notification!');
-                return;
-            }
-        } else {
-            Alert.alert('Must use physical device for Push Notifications');
-        }
     };
 
     const handleLoadMore = () => {
@@ -225,8 +177,8 @@ const styles = StyleSheet.create({
         justifyContent: 'space-around',
         alignItems: 'center',
         backgroundColor: 'black',
-        paddingBottom: 20,
-        paddingTop: 10,
+        paddingBottom: 20,  // Keep the bottom padding as is
+        paddingTop: 10,     // Reduce the top padding
         position: 'absolute',
         bottom: 0,
         left: 0,
