@@ -15,6 +15,7 @@ import AboutScreen from './screens/AboutScreen';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import TeamsChannelScreen from './screens/TeamsChannelScreen';
 
 const Stack = createStackNavigator();
 
@@ -99,6 +100,7 @@ const AppNavigator = () => {
         <Stack.Screen name="Links" component={Links} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="About" component={AboutScreen} />
+        <Stack.Screen name ="Teams Channel" component={TeamsChannelScreen} />
       </Stack.Navigator>
     </GestureHandlerRootView>
   );

@@ -8,8 +8,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "notification": {
-      "icon": "./assets/notification-icon.png", 
-      "color": "#000000", 
+      "icon": "./assets/notification-icon.png",
+      "color": "#000000",
       "iosDisplayInForeground": true
     },
     "splash": {
@@ -17,33 +17,42 @@
       "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-  "supportsTablet": true,
-  "bundleIdentifier": "com.ectscmp.EctsEcosystem",
-  "buildNumber": "12",
-  "permissions": ["INTERNET"],
-  "infoPlist": {
-    "UIBackgroundModes": ["fetch", "remote-notification"],
-    "NSAppTransportSecurity": {
-      "NSAllowsArbitraryLoads": true
-    }
-  }
-},
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ectscmp.EctsEcosystem",
+      "buildNumber": "12",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["msauth.com.ectscmp.EctsEcosystem"]
+          }
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "notification": {
-        "sound": "notification.mp3" 
+        "sound": "notification.mp3"
       },
-      "permissions": ["INTERNET"] 
-    },
-      "package": "com.gmail.ectscmp.ecosystem",
-      "versionCode": 18
+      "permissions": ["INTERNET"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "msauth",
+            "host": "com.ectscmp.EctsEcosystem",
+            "pathPrefix": "/auth"
+          },
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -51,9 +60,14 @@
     "extra": {
       "eas": {
         "projectId": "c2c2013c-7df7-4614-9621-d077e28bed30"
+      },
+      "auth": {
+        "redirectUri": "msauth.com.ectscmp.EctsEcosystem://auth"
+      },
+      "expo": {
+        "scheme": "msauth"
       }
     },
     "owner": "ectscmp"
   }
-
-
+}

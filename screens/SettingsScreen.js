@@ -1,122 +1,133 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Switch, TouchableOpacity, ScrollView, StyleSheet, Button } from 'react-native';
+import { View, Text, Switch, TouchableOpacity, ScrollView, StyleSheet, Button, Alert } from 'react-native'; // Import Alert here
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import * as Notifications from 'expo-notifications';
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
   const { isDarkMode, toggleTheme } = useTheme();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true); // Default to true
-  const [timeSelection, setTimeSelection] = useState('AM'); // Default to AM
-
-  const fetchSettings = async () => {
-    try {
-      // Fetch notifications setting
-      const notificationsValue = await AsyncStorage.getItem('notificationsEnabled');
-      if (notificationsValue !== null) {
-        setNotificationsEnabled(JSON.parse(notificationsValue));
-      } else {
-        // If no setting exists, ensure it's set to true
-        await AsyncStorage.setItem('notificationsEnabled', JSON.stringify(true));
-      }
-
-      // Fetch time selection setting
-      const timeValue = await AsyncStorage.getItem('notificationTime');
-      if (timeValue !== null) {
-        setTimeSelection(timeValue);
-      }
-
-      // Fetch dark mode setting
-      const darkModeValue = await AsyncStorage.getItem('darkMode');
-      if (darkModeValue !== null) {
-        const shouldBeDarkMode = JSON.parse(darkModeValue);
-        // Set the theme if the loaded value is different
-        if (shouldBeDarkMode !== isDarkMode) {
-          toggleTheme(); // Toggle only if the stored value differs from current theme
-        }
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [timeSelection, setTimeSelection] = useState('PM'); // Default to PM
 
   useEffect(() => {
-    fetchSettings();
+    const loadSettings = async () => {
+      try {
+        const savedNotificationsEnabled = await AsyncStorage.getItem('notificationsEnabled');
+        const savedTimeSelection = await AsyncStorage.getItem('notificationTime');
+
+        if (savedNotificationsEnabled !== null) {
+          setNotificationsEnabled(JSON.parse(savedNotificationsEnabled));
+        }
+        if (savedTimeSelection) {
+          setTimeSelection(savedTimeSelection);
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+
+    loadSettings();
   }, []);
 
   useEffect(() => {
-    // Schedule notifications if enabled
-    if (notificationsEnabled) {
-      scheduleNotification();
-    } else {
-      clearAllNotifications();
-    }
-  }, [notificationsEnabled, timeSelection]);
-
-  const scheduleNotification = async () => {
-    const currentHour = new Date().getHours();
-    const hour = timeSelection === 'AM' ? (currentHour < 12 ? currentHour : currentHour - 12) : (currentHour === 12 ? 12 : currentHour + 12);
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Class Reminder',
-        body: 'Check your class schedule!',
-        sound: 'notification.mp3', // Ensure you have your custom sound set up
-      },
-      trigger: {
-        hour: hour,
-        minute: 0,
-        repeats: true,
-      },
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      const { data } = response.notification.request.content;
+      navigation.navigate('DailyDiscussion', { data });
     });
+
+    return () => subscription.remove(); 
+  }, [navigation]);
+
+  const generateNotificationDates = () => {
+    const notificationDates = [];
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 30); 
+
+    for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) { 
+        notificationDates.push(new Date(d)); 
+      }
+    }
+
+    return notificationDates;
+  };
+
+  const scheduleNotifications = async (dates) => {
+    const hour = timeSelection === 'AM' ? 8 : 13; 
+    const minute = timeSelection === 'AM' ? 0 : 38; 
+
+    const now = new Date();
+
+    for (const date of dates) {
+      const notificationDate = new Date(date);
+      notificationDate.setHours(hour);
+      notificationDate.setMinutes(minute);
+      notificationDate.setSeconds(0); 
+
+      if (notificationDate > now) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'Reminder',
+            body: 'Do Your Daily Discussion!',
+            data: {
+              someKey: 'someValue',
+            },
+          },
+          trigger: notificationDate,
+        });
+      }
+    }
   };
 
   const clearAllNotifications = async () => {
     await Notifications.cancelAllScheduledNotificationsAsync();
   };
 
-  const toggleDarkMode = async () => {
+  const resetNotifications = async () => {
     try {
-      // Toggle the theme
-      toggleTheme();
-      // Save the new state in AsyncStorage
-      await AsyncStorage.setItem('darkMode', JSON.stringify(!isDarkMode));
+      await clearAllNotifications(); 
+      const notificationDates = generateNotificationDates(); 
+      await scheduleNotifications(notificationDates); 
     } catch (error) {
-      console.error('Error saving dark mode setting:', error);
+      console.error("Error during reset:", error);
     }
   };
+
+  useEffect(() => {
+    if (notificationsEnabled) {
+      resetNotifications(); 
+    } else {
+      clearAllNotifications(); 
+    }
+  }, [notificationsEnabled, timeSelection]);
 
   const toggleNotifications = async () => {
     const newValue = !notificationsEnabled;
     setNotificationsEnabled(newValue);
-    try {
-      // Save the new notifications setting in AsyncStorage
-      await AsyncStorage.setItem('notificationsEnabled', JSON.stringify(newValue));
-      if (newValue) {
-        // If notifications are enabled, set a default time if not already set
-        if (!timeSelection) {
-          setTimeSelection('AM');
-          await AsyncStorage.setItem('notificationTime', 'AM');
-        }
-      } else {
-        clearAllNotifications(); // Clear notifications if turned off
-      }
-    } catch (error) {
-      console.error('Error saving notifications setting:', error);
+    await AsyncStorage.setItem('notificationsEnabled', JSON.stringify(newValue));
+    
+    if (newValue) {
+        resetNotifications(); 
+    } else {
+        clearAllNotifications(); 
     }
   };
 
   const selectTime = async (time) => {
     setTimeSelection(time);
-    try {
-      // Save the selected time in AsyncStorage
-      await AsyncStorage.setItem('notificationTime', time);
-    } catch (error) {
-      console.error('Error saving notification time:', error);
+    await AsyncStorage.setItem('notificationTime', time);
+    if (notificationsEnabled) {
+        resetNotifications(); 
     }
+  };
+
+  const showComingSoonAlert = () => {
+    Alert.alert('Coming Soon', 'The Teams Channel feature is in the working. Stay tuned!', [{ text: 'OK' }]);
   };
 
   const dynamicStyles = styles(isDarkMode);
@@ -163,22 +174,44 @@ const SettingsScreen = () => {
         </View>
         <Switch
           value={isDarkMode}
-          onValueChange={toggleDarkMode}
+          onValueChange={toggleTheme}
           trackColor={{ false: '#767577', true: '#81b0ff' }}
           thumbColor={isDarkMode ? '#007AFF' : '#f4f3f4'}
         />
       </View>
 
-      <TouchableOpacity style={dynamicStyles.settingItem} onPress={() => navigation.navigate('About')}>
+      <TouchableOpacity
+        style={dynamicStyles.settingItem}
+        onPress={() => navigation.navigate('About')}
+      >
         <View style={dynamicStyles.settingTextContainer}>
           <Ionicons name="information-circle-outline" size={24} color={isDarkMode ? '#81b0ff' : '#007AFF'} />
           <Text style={dynamicStyles.settingText}>About</Text>
         </View>
         <Ionicons name="chevron-forward-outline" size={20} color={isDarkMode ? '#81b0ff' : '#007AFF'} />
       </TouchableOpacity>
+
+      <TouchableOpacity
+  style={dynamicStyles.settingItem}
+  onPress={showComingSoonAlert}
+>
+  <View style={dynamicStyles.underConstructionItem}>
+    <View style={dynamicStyles.settingTextContainer}>
+    <Ionicons name="people-outline" size={24} color={isDarkMode ? '#FFD700' : '#000'} /> 
+    <Text style={dynamicStyles.underConstructionText}>Teams Channel (COMING SOON)</Text>
+    </View>
+  </View>
+  <Ionicons 
+    name="chevron-forward-outline" 
+    size={20} 
+    color={isDarkMode ? '#FFD700' : '#000'} 
+  />
+</TouchableOpacity>
+
     </ScrollView>
   );
 };
+
 const styles = (isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
@@ -197,9 +230,9 @@ const styles = (isDarkMode) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     borderRadius: 10,
-    marginBottom: 20,
+    marginBottom: 15,
   },
   settingTextContainer: {
     flexDirection: 'row',
@@ -207,21 +240,34 @@ const styles = (isDarkMode) => StyleSheet.create({
   },
   settingText: {
     fontSize: 18,
-    fontWeight: '500',
+    marginLeft: 10,
     color: isDarkMode ? '#fff' : '#000',
-    textAlign: "center"
   },
   timeSelectionContainer: {
-    marginBottom: 20,
-    backgroundColor: isDarkMode ? '#1E1E1E' : '#fff',
-    padding: 15,
-    borderRadius: 10,
+    marginTop: 10,
+    marginBottom: 10,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 10,
   },
+  underConstructionItem: {
+    backgroundColor: isDarkMode ? '#1E1E1E' : '#e0e0e0', // Ensure this is set correctly
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    marginBottom: 0,
+  },
+  underConstructionText: {
+    fontSize: 18,
+    color: isDarkMode ? '#FFD700' : '#000', 
+    marginLeft: 10,
+  },
+  
 });
 
 export default SettingsScreen;

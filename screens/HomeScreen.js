@@ -110,6 +110,7 @@ const HomeScreen = () => {
             pubDate={item.pubDate}
             author={item.author}
             categories={item.category || []}
+            
         />
     );
 
@@ -205,12 +206,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     moreMenu: {
+        backgroundColor: 'rgba(0,0,0,0.5)',
         position: 'absolute',
         bottom: 60,
-        left: 0,
         right: 0,
-        backgroundColor: '#333',
         padding: 10,
+        borderRadius: 5,
     },
     moreMenuItem: {
         padding: 10,
@@ -219,7 +220,6 @@ const styles = StyleSheet.create({
     },
     moreMenuText: {
         color: 'white',
-        fontSize: 16,
     },
 });
 

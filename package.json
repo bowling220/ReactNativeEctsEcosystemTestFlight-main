@@ -9,6 +9,9 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@azure/msal-browser": "^3.26.1",
+    "@azure/msal-node": "^2.15.0",
+    "@azure/msal-react": "^2.1.1",
     "@expo/metro-config": "^0.18.4",
     "@expo/metro-runtime": "~3.2.1",
     "@react-native-async-storage/async-storage": "^1.24.0",
@@ -41,11 +44,13 @@
     "react-dom": "18.2.0",
     "react-i18next": "^14.1.2",
     "react-native": "0.74.1",
+    "react-native-app-auth": "^8.0.0",
     "react-native-elements": "^3.4.3",
     "react-native-gesture-handler": "~2.16.1",
     "react-native-html-parser": "^0.1.0",
     "react-native-htmlview": "^0.17.0",
     "react-native-linear-gradient": "^2.8.3",
+    "react-native-msal": "^4.0.4",
     "react-native-radial-gradient": "^1.1.5",
     "react-native-reanimated": "~3.10.1",
     "react-native-render-html": "^6.3.4",
@@ -60,7 +65,8 @@
     "react-native-webview": "13.8.6",
     "react-navigation": "^4.4.4",
     "react-navigation-stack": "^2.10.4",
-    "typescript": "~5.3.3"
+    "typescript": "~5.3.3",
+    "expo-web-browser": "~13.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
