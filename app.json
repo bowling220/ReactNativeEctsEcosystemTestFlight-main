@@ -6,6 +6,7 @@
     "sdkVersion": "51.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "msauth",
     "userInterfaceStyle": "light",
     "notification": {
       "icon": "./assets/notification-icon.png",
@@ -60,12 +61,6 @@
     "extra": {
       "eas": {
         "projectId": "c2c2013c-7df7-4614-9621-d077e28bed30"
-      },
-      "auth": {
-        "redirectUri": "msauth.com.ectscmp.EctsEcosystem://auth"
-      },
-      "expo": {
-        "scheme": "msauth"
       }
     },
     "owner": "ectscmp"
