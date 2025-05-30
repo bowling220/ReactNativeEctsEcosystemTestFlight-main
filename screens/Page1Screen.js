@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 
 const { width } = Dimensions.get('window');
 
@@ -19,6 +20,8 @@ const Page1Screen = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const { getFontSizeMultiplier } = useSettings();
+    const fontSizeMultiplier = getFontSizeMultiplier();
 
     useEffect(() => {
         const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
@@ -146,34 +149,34 @@ const Page1Screen = () => {
                 <View style={styles.bottomNavigation}>
                     <TouchableOpacity style={styles.tabButton} onPress={() => navigateToPage('Home')}>
                         <AntDesign name="home" size={24} color="white" />
-                        <Text style={styles.tabText}>Home</Text>
+                        <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Home</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.tabButton} onPress={() => navigateToPage('Grades')}>
                         <AntDesign name="profile" size={24} color="white" />
-                        <Text style={styles.tabText}>Grades</Text>
+                        <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Grades</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.tabButton} onPress={() => navigateToPage('Ecosystem Website')}>
                         <AntDesign name="earth" size={24} color="white" />
-                        <Text style={styles.tabText}>Website</Text>
+                        <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Website</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.tabButton} onPress={() => setShowMore(!showMore)}>
                         <AntDesign name="bars" size={24} color="white" />
-                        <Text style={styles.tabText}>More</Text>
+                        <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>More</Text>
                     </TouchableOpacity>
                 </View>
                 {showMore && (
                     <View style={styles.moreMenu}>
                         <TouchableOpacity style={styles.moreMenuItem} onPress={() => navigateToPage('Games')}>
-                            <Text style={styles.moreMenuText}>Games</Text>
+                            <Text style={[styles.moreMenuText, { fontSize: 12 * fontSizeMultiplier }]}>Games</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.moreMenuItem} onPress={() => navigateToPage('Tools')}>
-                            <Text style={styles.moreMenuText}>Tools</Text>
+                            <Text style={[styles.moreMenuText, { fontSize: 12 * fontSizeMultiplier }]}>Tools</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.moreMenuItem} onPress={() => navigateToPage('Links')}>
-                            <Text style={styles.moreMenuText}>Links</Text>
+                            <Text style={[styles.moreMenuText, { fontSize: 12 * fontSizeMultiplier }]}>Links</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.moreMenuItem} onPress={() => navigateToPage('DailyDiscussion')}>
-                            <Text style={styles.moreMenuText}>Daily Discussion</Text>
+                            <Text style={[styles.moreMenuText, { fontSize: 12 * fontSizeMultiplier }]}>Daily Discussion</Text>
                         </TouchableOpacity>
                     </View>
                 )}

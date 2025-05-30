@@ -6,6 +6,7 @@ import { AntDesign } from '@expo/vector-icons';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useTheme } from '../context/ThemeContext'; // Assuming you have this context setup
 import NetInfo from "@react-native-community/netinfo"; // Import the community NetInfo
+import { useSettings } from '../context/SettingsContext';
 
 const { width } = Dimensions.get('window');
 
@@ -56,6 +57,8 @@ const Page2Screen = () => {
   const [isVPNConnected, setIsVPNConnected] = useState(false); // This flag is based on the private IP check
   const animatedValue = useState(new Animated.Value(0))[0];
   const webViewRef = useRef(null);
+  const { getFontSizeMultiplier } = useSettings();
+  const fontSizeMultiplier = getFontSizeMultiplier();
 
   useEffect(() => {
     checkVPNStatus();
@@ -237,7 +240,7 @@ const Page2Screen = () => {
           accessibilityLabel="Navigate to Home"
         >
           <AntDesign name="home" size={24} color="white" />
-          <Text style={styles.tabText}>Home</Text>
+          <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.tabButton}
@@ -245,7 +248,7 @@ const Page2Screen = () => {
           accessibilityLabel="Navigate to Grades"
         >
           <AntDesign name="profile" size={24} color="white" />
-          <Text style={styles.tabText}>Grades</Text>
+          <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Grades</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.tabButton}
@@ -253,7 +256,7 @@ const Page2Screen = () => {
           accessibilityLabel="Navigate to Website"
         >
           <AntDesign name="earth" size={24} color="white" />
-          <Text style={styles.tabText}>Website</Text>
+          <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Website</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.tabButton}
@@ -261,23 +264,23 @@ const Page2Screen = () => {
           accessibilityLabel="Toggle More Options"
         >
           <AntDesign name="bars" size={24} color="white" />
-          <Text style={styles.tabText}>More</Text>
+          <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>More</Text>
         </TouchableOpacity>
       </View>
 
       {showMore && (
         <View style={[styles.moreMenu, {backgroundColor: isDarkMode ? 'rgba(50,50,50,0.95)' : 'rgba(0,0,0,0.9)'}]}>
           <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Games')}>
-            <Text style={styles.moreMenuText}>Games</Text>
+            <Text style={[styles.moreMenuText, { fontSize: 12 * fontSizeMultiplier }]}>Games</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Tools')}>
-            <Text style={styles.moreMenuText}>Tools</Text>
+            <Text style={[styles.moreMenuText, { fontSize: 12 * fontSizeMultiplier }]}>Tools</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Links')}>
-            <Text style={styles.moreMenuText}>Links</Text>
+            <Text style={[styles.moreMenuText, { fontSize: 12 * fontSizeMultiplier }]}>Links</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('DailyDiscussion')}>
-            <Text style={styles.moreMenuText}>Daily Discussion</Text>
+            <Text style={[styles.moreMenuText, { fontSize: 12 * fontSizeMultiplier }]}>Daily Discussion</Text>
           </TouchableOpacity>
         </View>
       )}

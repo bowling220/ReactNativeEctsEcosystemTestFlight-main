@@ -6,6 +6,7 @@ import NetInfo from '@react-native-community/netinfo';
 import PostCard2 from '../components/PostCard2'; // Import PostCard2
 import { AntDesign } from '@expo/vector-icons'; // Import AntDesign
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 
 const ResourcePage = () => {
     const navigation = useNavigation();
@@ -14,6 +15,8 @@ const ResourcePage = () => {
     const [loading, setLoading] = useState(true);
     const [isConnected, setIsConnected] = useState(true);
     const [showMore, setShowMore] = useState(false); // Manage the "More" submenu visibility
+    const { getFontSizeMultiplier } = useSettings();
+    const fontSizeMultiplier = getFontSizeMultiplier();
 
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
@@ -118,43 +121,43 @@ const ResourcePage = () => {
                 </View>
             ) : (
                 <ScrollView style={styles.scrollView}>
-                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Links</Text>
-                    {data.length > 0 ? renderCards(data) : <Text style={{ color: theme.colors.text }}>No items to display</Text>}
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: 18 * fontSizeMultiplier }]}>Links</Text>
+                    {data.length > 0 ? renderCards(data) : <Text style={{ color: theme.colors.text, fontSize: 16 * fontSizeMultiplier }}>No items to display</Text>}
                 </ScrollView>
             )}
 
             <View style={styles.bottomNavigation}>
                 <TouchableOpacity style={styles.tabButton} onPress={() => handlePagePress('Home')}>
                     <AntDesign name="home" size={24} color="white" />
-                    <Text style={styles.tabText}>Home</Text>
+                    <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Home</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.tabButton} onPress={() => handlePagePress('Grades')}>
                     <AntDesign name="profile" size={24} color="white" />
-                    <Text style={styles.tabText}>Grades</Text>
+                    <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Grades</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.tabButton} onPress={() => handlePagePress('Website')}>
                     <AntDesign name="earth" size={24} color="white" />
-                    <Text style={styles.tabText}>Website</Text>
+                    <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>Website</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.tabButton} onPress={() => setShowMore(!showMore)}>
                     <AntDesign name="bars" size={24} color="white" />
-                    <Text style={styles.tabText}>More</Text>
+                    <Text style={[styles.tabText, { fontSize: 12 * fontSizeMultiplier }]}>More</Text>
                 </TouchableOpacity>
             </View>
 
             {showMore && (
                 <View style={styles.moreMenu}>
                     <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Games')}>
-                        <Text style={styles.moreMenuText}>Games</Text>
+                        <Text style={[styles.moreMenuText, { fontSize: 14 * fontSizeMultiplier }]}>Games</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Tools')}>
-                        <Text style={styles.moreMenuText}>Tools</Text>
+                        <Text style={[styles.moreMenuText, { fontSize: 14 * fontSizeMultiplier }]}>Tools</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('Links')}>
-                        <Text style={styles.moreMenuText}>Links</Text>
+                        <Text style={[styles.moreMenuText, { fontSize: 14 * fontSizeMultiplier }]}>Links</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.moreMenuItem} onPress={() => handlePagePress('DailyDiscussion')}>
-                        <Text style={styles.moreMenuText}>Daily Discussion</Text>
+                        <Text style={[styles.moreMenuText, { fontSize: 14 * fontSizeMultiplier }]}>Daily Discussion</Text>
                     </TouchableOpacity>
                 </View>
             )}
