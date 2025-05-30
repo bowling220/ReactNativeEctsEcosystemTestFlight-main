@@ -3,11 +3,15 @@ import { View, TouchableOpacity, Text, StyleSheet, PanResponder, Animated, Activ
 import { WebView } from 'react-native-webview';
 import { AntDesign } from '@expo/vector-icons';
 import { HeaderBackButton } from '@react-navigation/stack';
+import { useTheme } from '../context/ThemeContext';
 
 const DailyDiscussionFragment = ({ navigation }) => {
+    const { theme, isDarkMode } = useTheme();
     const [webViewOpacity] = React.useState(new Animated.Value(1));
     const webViewRef = useRef(null);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [hasError, setHasError] = React.useState(false);
+    const [errorMessage, setErrorMessage] = React.useState('');
     const [showMore, setShowMore] = React.useState(false); // State to manage the "More" submenu visibility
 
     const handlePagePress = (pageName) => {
@@ -48,6 +52,22 @@ const DailyDiscussionFragment = ({ navigation }) => {
         })
     ).current;
 
+    const handleWebViewError = (syntheticEvent) => {
+        const { nativeEvent } = syntheticEvent;
+        setHasError(true);
+        setErrorMessage(nativeEvent.description || 'Failed to load the page');
+        setIsLoading(false);
+    };
+
+    const handleLoadStart = () => {
+        setIsLoading(true);
+        setHasError(false);
+    };
+
+    const handleLoadEnd = () => {
+        setIsLoading(false);
+    };
+
     React.useLayoutEffect(() => {
         navigation.setOptions({
             headerLeft: () => null,
@@ -55,7 +75,7 @@ const DailyDiscussionFragment = ({ navigation }) => {
     }, [navigation]);
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             <Animated.View style={{ flex: 1, opacity: webViewOpacity }} {...panResponder.panHandlers}>
                 <WebView
                     originWhitelist={['*']}
@@ -63,28 +83,32 @@ const DailyDiscussionFragment = ({ navigation }) => {
                     source={{ uri: 'https://ects-computerprogramming.com/ClassCompanions/DailyDiscussion/' }}
                     javaScriptEnabled={true}
                     domStorageEnabled={true}
-                    onLoadStart={() => {
-                        setIsLoading(true);
-                        Animated.timing(webViewOpacity, {
-                            toValue: 0,
-                            duration: 250,
-                            useNativeDriver: true,
-                        }).start();
-                    }}
-                    onLoad={() => {
-                        setIsLoading(false);
-                        Animated.timing(webViewOpacity, {
-                            toValue: 1,
-                            duration: 250,
-                            useNativeDriver: true,
-                        }).start();
-                    }}
+                    onError={handleWebViewError}
+                    onLoadStart={handleLoadStart}
+                    onLoadEnd={handleLoadEnd}
+                    renderLoading={() => (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color={theme.colors.primary} />
+                        </View>
+                    )}
+                    startInLoadingState={true}
+                    renderError={(errorDomain, errorCode, errorDesc) => (
+                        <View style={styles.errorContainer}>
+                            <Text style={[styles.errorText, { color: theme.colors.text }]}>
+                                {errorDesc || 'Failed to load the page'}
+                            </Text>
+                            <TouchableOpacity 
+                                style={styles.retryButton}
+                                onPress={() => {
+                                    setHasError(false);
+                                    webViewRef.current?.reload();
+                                }}
+                            >
+                                <Text style={styles.retryButtonText}>Retry</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 />
-                {isLoading && (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator color="black" size="small" />
-                    </View>
-                )}
             </Animated.View>
             <View style={styles.bottomNavigation}>
                 <TouchableOpacity style={styles.tabButton} onPress={() => handlePagePress('Home')}>
@@ -125,6 +149,9 @@ const DailyDiscussionFragment = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
     bottomNavigation: {
         flexDirection: 'row',
         justifyContent: 'space-around',
@@ -145,10 +172,39 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     loadingContainer: {
-        ...StyleSheet.absoluteFill,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    },
+    errorContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    retryButton: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 5,
+    },
+    retryButtonText: {
+        color: 'white',
+        fontSize: 16,
     },
     moreMenu: {
         backgroundColor: 'rgba(0,0,0,0.5)',

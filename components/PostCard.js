@@ -1,20 +1,42 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ScrollView, useWindowDimensions, ActivityIndicator, Share } from 'react-native';
+// PostCard.js
+import React, { useState, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, ScrollView, useWindowDimensions, ActivityIndicator, Share, SafeAreaView, Dimensions } from 'react-native';
 import HTML from 'react-native-render-html';
 import moment from 'moment';
 import { AntDesign } from '@expo/vector-icons';
 import { decode } from 'html-entities';
+import Toast from 'react-native-toast-message';
+import { useTheme } from '../context/ThemeContext'; // Adjust path if necessary
+import { useSettings } from '../context/SettingsContext';
 
-const PostCard = ({ title, content, linkUrl, item, pubDate, categories = [] }) => {
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+const PostCard = ({ title, content, linkUrl, item, pubDate, categories = [], onSharePress, layout = 'list' }) => {
+    const { theme, isDarkMode } = useTheme();
+    const { getFontSizeMultiplier, getImageQuality } = useSettings();
+    const fontSizeMultiplier = getFontSizeMultiplier();
+    const imageQuality = getImageQuality();
+    const styles = useMemo(() => getDynamicStyles(theme, isDarkMode), [theme, isDarkMode]); // Memoize styles
+
     const [expanded, setExpanded] = useState(false);
-    const [categoriesExpanded, setCategoriesExpanded] = useState(false);
     const [loading, setLoading] = useState(true);
     const windowWidth = useWindowDimensions().width;
 
-    const resizeImagesInContent = (content, maxWidth) => {
-        if (!content) return null;
+    const resizeImagesInContent = (htmlContent, maxWidth) => {
+        if (!htmlContent) return null;
         const imgRegex = /<img[^>]*src\s*=\s*['"]([^'"]+)['"][^>]*>/g;
-        return content.replace(imgRegex, (match, url) => `<img src='${url}' style='max-width:${maxWidth}px; height:auto;'>`);
+        return htmlContent.replace(imgRegex, (match, url) => {
+            // Add quality parameter to image URL if data saver is enabled
+            const qualityParam = imageQuality === 'low' ? '?quality=low' : '';
+            return `<img src='${url}${qualityParam}' style='max-width:${maxWidth}px; height:auto;'>`;
+        });
     };
 
     const extractImageUrl = (contentEncoded) => {
@@ -29,257 +51,399 @@ const PostCard = ({ title, content, linkUrl, item, pubDate, categories = [] }) =
         return htmlContent.replace(/<\/?[^>]+(>|$)/g, '');
     };
 
-    const handleShare = async (title, content) => {
+    const handleShareInternal = async (shareTitle, shareContent) => {
         try {
             const googlePlayLink = 'https://play.google.com/store/apps/details?id=com.gmail.ectscmp.ecosystem&pcampaignid=web_share';
             const testFlightLink = 'https://apps.apple.com/us/app/ects-cmp-ecosystem/id6504026235';
 
-            const plainContent = stripHtmlTags(content);
+            const plainContent = stripHtmlTags(shareContent);
             const decodedContent = decode(plainContent);
             const partialContent = decodedContent.length > 100 ? decodedContent.substring(0, 100) + '...' : decodedContent;
 
             const result = await Share.share({
-                title: title,
-                message: `${title}\n\n${partialContent}\n\nDownload the app:\nGoogle Play Store: ${googlePlayLink}\niOS: ${testFlightLink}`,
+                title: shareTitle,
+                message: `${shareTitle}\n\n${partialContent}\n\nDownload the app:\nGoogle Play Store: ${googlePlayLink}\niOS: ${testFlightLink}`,
             });
 
             if (result.action === Share.sharedAction) {
-                if (result.activityType) {
-                    // Handle activity type if needed
-                } else {
-                    alert('Shared successfully!');
-                }
-            } else if (result.action === Share.dismissedAction) {
-                alert('Share action dismissed.');
+                Toast.show({
+                    type: 'success',
+                    text1: 'Shared successfully!',
+                    position: 'bottom',
+                    visibilityTime: 2000,
+                });
             }
         } catch (error) {
-            alert('Error sharing the post: ' + error.message);
+            Toast.show({
+                type: 'error',
+                text1: 'Sharing Error',
+                text2: error.message,
+                position: 'bottom',
+                visibilityTime: 3000,
+            });
         }
     };
 
-    const resizedContent = resizeImagesInContent(content, windowWidth);
+    const resizedContent = resizeImagesInContent(content, windowWidth - 32);
     const imageUrl = item && item.imageUrl ? item.imageUrl : extractImageUrl(content);
     const handleModalToggle = () => setExpanded(!expanded);
-    const formattedPubDate = pubDate ? moment(pubDate).format('MMMM D, YYYY [at] h:mm A') : 'Date not available';
+    const formattedPubDate = pubDate ? formatDate(pubDate) : 'Date not available';
+
+    const getLayoutStyles = () => {
+        switch (layout) {
+            case 'card':
+                return {
+                    container: styles.cardView,
+                    image: styles.cardImage,
+                    title: styles.cardTitle,
+                    date: styles.cardDate,
+                    footer: styles.cardFooter,
+                };
+            case 'grid2x2':
+                return {
+                    container: styles.gridView,
+                    image: styles.gridImage,
+                    title: styles.gridTitle,
+                    date: styles.gridDate,
+                    footer: styles.gridFooter,
+                };
+            default: // 'list'
+                return {
+                    container: styles.listView,
+                    image: styles.listImage,
+                    title: styles.listTitle,
+                    date: styles.listDate,
+                    footer: styles.listFooter,
+                };
+        }
+    };
+
+    const layoutStyles = getLayoutStyles(); // This depends on `styles` which is now theme-dependent
+
+    React.useEffect(() => {
+        if ((layout === 'card' || layout === 'grid2x2') && imageUrl) {
+            setLoading(true);
+        } else {
+            setLoading(false);
+        }
+    }, [imageUrl, layout]);
+
+    const effectiveOnSharePress = onSharePress ? onSharePress : () => handleShareInternal(title, content);
+
+    // Dynamic HTML styles based on theme and font size
+    const htmlTagsStyles = {
+        p: {
+            fontSize: 16 * fontSizeMultiplier,
+            lineHeight: 24 * fontSizeMultiplier,
+            color: theme.colors.text,
+            marginBottom: 16
+        },
+        img: {
+            marginVertical: 16,
+            borderRadius: 8,
+        },
+        a: {
+            color: theme.colors.primary,
+            textDecorationLine: 'none'
+        }
+    };
 
     return (
-        <View style={styles.card}>
+        <View style={[styles.card, layoutStyles.container]}>
             <View style={styles.header}>
-                <Text style={styles.title}>{title || 'No Title'}</Text>
-                
-                <View style={styles.categoryContainer}>
-                    {Array.isArray(categories) && categories.length > 0 ? ( // Check if categories is an array
-                        <>
-                            <Text style={styles.category}>{categories[0]}</Text>
-                            {categories.length > 1 && (
-                                <>
-                                    <TouchableOpacity onPress={() => setCategoriesExpanded(!categoriesExpanded)}>
-                                        <Text style={styles.moreButton}>
-                                            {categoriesExpanded ? 'Hide categories' : `+ ${categories.length - 1} more`}
-                                        </Text>
-                                    </TouchableOpacity>
-                                    {categoriesExpanded && (
-                                        <View style={styles.additionalCategories}>
-                                            {categories.slice(1).map((category, index) => (
-                                                <Text key={index} style={styles.category}>{category}</Text>
-                                            ))}
-                                        </View>
-                                    )}
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        <Text style={styles.noCategoriesText}>No categories</Text> // Display if there are no categories
+                <Text style={[styles.title, layoutStyles.title, { fontSize: 18 * fontSizeMultiplier }]} numberOfLines={layout === 'grid2x2' ? 3 : 2}>{title || 'No Title'}</Text>
+                <Text style={[styles.date, layoutStyles.date, { fontSize: 13 * fontSizeMultiplier }]}>{formattedPubDate}</Text>
+            </View>
+
+            {(layout === 'card' || layout === 'grid2x2') && imageUrl && (
+                <View>
+                    <Image
+                        source={{ 
+                            uri: imageQuality === 'low' ? `${imageUrl}?quality=low` : imageUrl,
+                            cache: 'reload' // Force reload when quality changes
+                        }}
+                        style={[styles.image, layoutStyles.image]}
+                        onLoad={() => setLoading(false)}
+                        onError={() => {
+                            setLoading(false);
+                        }}
+                    />
+                    {loading && (
+                        <ActivityIndicator
+                            style={styles.loader}
+                            size="small"
+                            color={theme.colors.primary}
+                        />
                     )}
-                                    <Text style={styles.pubDate}>{formattedPubDate}</Text>
- 
                 </View>
-    
-                <TouchableOpacity style={styles.shareButton} onPress={() => handleShare(title, content)}>
-                    <AntDesign name="sharealt" size={24} color="#fff" />
-                    <Text style={styles.shareButtonText}>Share</Text>
+            )}
+
+            <View style={[styles.footer, layoutStyles.footer]}>
+                <TouchableOpacity
+                    style={[
+                        styles.readMoreButton,
+                        layout === 'grid2x2' && styles.gridReadMoreButton
+                    ]}
+                    onPress={handleModalToggle}
+                >
+                    <Text
+                        style={[
+                            styles.readMoreButtonText,
+                            layout === 'grid2x2' && styles.gridReadMoreButtonText
+                        ]}
+                    >
+                        Read More
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.shareButton,
+                        layout === 'grid2x2' && styles.gridShareButtonIconOnly
+                    ]}
+                    onPress={effectiveOnSharePress}
+                >
+                    <AntDesign
+                        name="sharealt"
+                        size={layout === 'grid2x2' ? 18 : 24}
+                        color="#fff" // Share button icon color (typically white for good contrast on green)
+                    />
+                    {layout !== 'grid2x2' && (
+                        <Text style={styles.shareButtonText}>Share</Text>
+                    )}
                 </TouchableOpacity>
             </View>
-    
-            {imageUrl && (
-                <Image
-                    source={{ uri: imageUrl }}
-                    style={styles.image}
-                    onLoad={() => setLoading(false)}
-                    onError={() => setLoading(false)}
-                />
-            )}
-            {loading && <ActivityIndicator style={styles.loader} size="small" color="#fff" />}
-    
-            <TouchableOpacity onPress={handleModalToggle}>
-                <Text style={styles.readMoreButton}>Read More</Text>
-            </TouchableOpacity>
-    
-            <Modal visible={expanded} animationType="slide" transparent={true}>
-                <View style={styles.modalContent}>
-                    <TouchableOpacity onPress={handleModalToggle} style={styles.closeButton}>
-                        <View style={styles.closeButtonArea}>
-                            <Text style={styles.closeButtonText}>Close</Text>
-                        </View>
-                    </TouchableOpacity>
-                    <Text style={styles.modalTitle}>{title || 'No Title'}</Text>
-                    <Text style={styles.modalDate}>{formattedPubDate}</Text>
-    
-                    <ScrollView contentContainerStyle={styles.scrollView} showsVerticalScrollIndicator={false}>
+
+            <Modal
+                visible={expanded}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={handleModalToggle}
+            >
+                <SafeAreaView style={styles.modalContainer}>
+                    <View style={styles.modalHeader}>
+                        <Text style={[styles.modalTitle, { fontSize: 22 * fontSizeMultiplier }]} numberOfLines={3}>{title || 'No Title'}</Text>
+                        <Text style={[styles.modalDate, { fontSize: 14 * fontSizeMultiplier }]}>{formattedPubDate}</Text>
+                        <TouchableOpacity
+                            onPress={handleModalToggle}
+                            style={styles.modalCloseButton}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <AntDesign name="close" size={24} color={theme.colors.text} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView
+                        style={styles.modalScrollView}
+                        contentContainerStyle={styles.modalScrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
                         {resizedContent ? (
                             <HTML
                                 source={{ html: resizedContent }}
-                                contentWidth={windowWidth}
+                                contentWidth={windowWidth - 32}
                                 ignoredDomTags={['video']}
-                                tagsStyles={{ p: { fontSize: 16 } }}
+                                tagsStyles={htmlTagsStyles} // Use dynamic HTML styles
                             />
                         ) : (
-                            <Text style={styles.errorText}>Content could not be rendered.</Text>
+                            <Text style={styles.errorText}>Content could not be rendered or is empty.</Text>
                         )}
                     </ScrollView>
-                </View>
+                </SafeAreaView>
             </Modal>
         </View>
     );
-    
 };
 
-const styles = StyleSheet.create({
+// Define styles as a function that takes theme and isDarkMode
+const getDynamicStyles = (theme, isDarkMode) => StyleSheet.create({
     card: {
-        padding: 15,
-        marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 15,
-        backgroundColor: '#f5f5f5',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-        overflow: 'hidden', // Prevent horizontal overflow
+        backgroundColor: theme.colors.card, // Themed
+        borderRadius: 12,
+        shadowColor: theme.colors.text, // Themed (black for light, white for dark - creates a glow effect on dark)
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 3.84,
+        elevation: 5,
+        overflow: 'hidden',
     },
-    additionalCategories: {
-        marginTop: 5,
+    listView: {
+        marginVertical: 10,
+        marginHorizontal: 16,
+    },
+    cardView: {
+        marginVertical: 8,
+        marginHorizontal: 16,
+    },
+    gridView: {
+        margin: 6,
+        flex: 1,
     },
     header: {
-        marginBottom: 0,
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 8,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: theme.colors.text, // Themed
+        lineHeight: 24,
+    },
+    listTitle: {
+        marginBottom: 4,
+    },
+    cardTitle: {
+        fontSize: 17,
+        fontWeight: '600',
+        lineHeight: 22,
+    },
+    gridTitle: {
+        fontSize: 14,
+        lineHeight: 18,
+        minHeight: 36,
+    },
+    date: {
+        fontSize: 13,
+        color: theme.colors.text, // Themed
+        opacity: 0.7, // Make it slightly less prominent
+        marginTop: 4,
+    },
+    listDate: {},
+    cardDate: {},
+    gridDate: {
+        fontSize: 11,
+        marginTop: 2,
     },
     image: {
         width: '100%',
-        height: 200,
         resizeMode: 'cover',
-        borderRadius: 15,
-        marginBottom: 10,
+        backgroundColor: theme.colors.border, // Themed (placeholder background)
+    },
+    listImage: {
+        height: 220,
+    },
+    cardImage: {
+        height: 200,
+    },
+    gridImage: {
+        height: 120,
     },
     loader: {
-        marginVertical: 10,
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: [{ translateX: -12 }, { translateY: -12 }],
     },
-    title: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 5,
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: theme.colors.border, // Themed
     },
-    categoryContainer: {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
+    listFooter: {},
+    cardFooter: {
+        paddingVertical: 12,
+        paddingHorizontal: 16,
     },
-    category: {
+    gridFooter: {
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+    },
+    readMoreButton: {
+        backgroundColor: theme.colors.primary, // Themed
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        flexShrink: 1,
+    },
+    readMoreButtonText: {
+        color: isDarkMode ? theme.colors.text : theme.colors.background, // Contrast with primary button
+        fontWeight: '600',
         fontSize: 14,
-        color: '#00000',
-        marginBottom: 0,
     },
-    noCategoriesText: {
-        fontSize: 14,
-        color: 'gray',
-        fontStyle: 'italic',
-        marginBottom: 5,
+    gridReadMoreButton: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        marginRight: 8,
     },
-    moreButton: {
-        fontSize: 14,
-        color: '#007BFF',
-        fontWeight: 'bold',
-        marginTop: 5,
-    },
-    pubDate: {
-        fontSize: 14,
-        color: '#888',
-        marginBottom: 10,
+    gridReadMoreButtonText: {
+        fontSize: 12,
     },
     shareButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        backgroundColor: '#007BFF',
-        borderRadius: 5,
-        marginBottom: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 3,
+        backgroundColor: '#34C759', // Kept green as per original design
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 8,
     },
     shareButtonText: {
-        color: '#fff',
-        marginLeft: 5,
-        fontWeight: 'bold',
+        color: '#FFFFFF', // White text for green button
+        marginLeft: 8,
+        fontWeight: '600',
+        fontSize: 14,
     },
-    readMoreButton: {
-        backgroundColor: '#007BFF',
-        color: '#FFFFFF',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: 10,
+    gridShareButtonIconOnly: {
         paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+        paddingHorizontal: 10,
+        marginLeft: 0,
     },
-    
-    
-    modalContent: {
+    modalContainer: {
         flex: 1,
-        padding: 20,
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        backgroundColor: theme.colors.background, // Themed
     },
-    scrollView: {
-        paddingBottom: 20,
+    modalHeader: {
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border, // Themed
+        backgroundColor: theme.colors.card, // Themed
     },
-    closeButton: {
-        marginTop:15,
-        marginBottom: 10,
-    },
-    closeButtonArea: {
-        padding: 10,
-        backgroundColor: '#ff4c4c',
-        borderRadius: 25,
+    modalCloseButton: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        zIndex: 1,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: isDarkMode ? theme.colors.border : '#e9e9eb', // Themed background
         alignItems: 'center',
-    },
-    closeButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
+        justifyContent: 'center',
     },
     modalTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 10,
+        fontSize: 22,
+        fontWeight: '700',
+        color: theme.colors.text, // Themed
+        marginBottom: 4,
+        paddingRight: 40,
     },
     modalDate: {
-        fontSize: 16,
-        color: '#888',
-        marginBottom: 20,
+        fontSize: 14,
+        color: theme.colors.text, // Themed
+        opacity: 0.7, // Make it slightly less prominent
+        marginBottom: 8,
+    },
+    modalScrollView: {
+        flex: 1,
+    },
+    modalScrollContent: {
+        padding: 16,
+        backgroundColor: theme.colors.card, // Themed
     },
     errorText: {
-        color: 'red',
+        color: theme.colors.notification, // Themed
         fontSize: 16,
         textAlign: 'center',
+        marginTop: 20,
+        paddingHorizontal: 16,
     },
 });
 

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Linking, useWindowDimensions, Image, ActivityIndicator } from 'react-native';
-import { WebView } from 'react-native-webview'; // Import WebView
+import { WebView } from 'react-native-webview';
 import HTML from 'react-native-render-html';
 import { SvgXml } from 'react-native-svg';
-
-
+import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 
 const getRandomColor = () => {
     const letters = '0123456789ABCDEF';
@@ -16,18 +16,20 @@ const getRandomColor = () => {
 };
 
 const PostCard2 = ({ title = '', content = '', linkUrl = '', item = {} }) => {
+    const { theme, isDarkMode } = useTheme();
+    const { getFontSizeMultiplier, getImageQuality } = useSettings();
+    const fontSizeMultiplier = getFontSizeMultiplier();
+    const imageQuality = getImageQuality();
     const [expanded, setExpanded] = useState(false);
     const [showWebView, setShowWebView] = useState(false);
     const [svgContent, setSvgContent] = useState(null);
     const [loading, setLoading] = useState(false);
     const windowWidth = useWindowDimensions().width;
-    const [modalTitleColor] = useState(getRandomColor());
-    const [htmlContentColor] = useState(getRandomColor());
-    const [linkButtonColor] = useState(getRandomColor());
-    const [playButtonColor] = useState(getRandomColor());
+    const [modalTitleColor] = useState(theme.colors.primary);
+    const [htmlContentColor] = useState(theme.colors.background);
+    const [linkButtonColor] = useState(theme.colors.primary);
+    const [playButtonColor] = useState(theme.colors.primary);
 
-    
-    // Create a reference for the WebView
     const webViewRef = useRef(null);
 
     const imageUrl = item.image || '';
@@ -38,15 +40,10 @@ const PostCard2 = ({ title = '', content = '', linkUrl = '', item = {} }) => {
                 .then(response => response.text())
                 .then(svg => setSvgContent(svg))
                 .catch(error => {
-                    console.error('Error fetching SVG:', error);
                     setSvgContent(null);
                 });
         }
     }, [imageUrl]);
-
-
-    
-    
 
     const handlePress = () => {
         setExpanded(!expanded);
@@ -67,17 +64,29 @@ const PostCard2 = ({ title = '', content = '', linkUrl = '', item = {} }) => {
                     </View>
                 );
             } else {
-                return <Text>Loading SVG...</Text>;
+                return (
+                    <View style={styles.svgContainer}>
+                        <Text style={{ color: theme.colors.text }}>Loading SVG...</Text>
+                    </View>
+                );
             }
         } else if (imageUrl) {
-            return <Image source={{ uri: imageUrl }} style={styles.image} />;
+            return (
+                <Image 
+                    source={{ 
+                        uri: imageQuality === 'low' ? `${imageUrl}?quality=low` : imageUrl,
+                        cache: 'reload'
+                    }} 
+                    style={styles.image} 
+                />
+            );
         }
         return null;
     };
 
     const handlePlayGame = () => {
-        setExpanded(false); // Close the expanded modal
-        setShowWebView(true); // Show WebView
+        setExpanded(false);
+        setShowWebView(true);
     };
 
     const renderButtonLabel = () => {
@@ -87,75 +96,84 @@ const PostCard2 = ({ title = '', content = '', linkUrl = '', item = {} }) => {
         return expanded ? 'Close' : 'Show More';
     };
 
-    // Function to refresh the WebView
     const refreshPage = () => {
         if (webViewRef.current) {
-            webViewRef.current.reload(); // Call the reload method on the WebView reference
+            webViewRef.current.reload();
         }
     };
 
     return (
-        <View style={styles.card}>
-            <Text style={styles.title}>{title}</Text>
+        <View style={[styles.card, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]}>
+            <Text style={[styles.title, { color: theme.colors.text, fontSize: 16 * fontSizeMultiplier }]}>{title}</Text>
             {!expanded && imageUrl && (
                 <TouchableOpacity onPress={handlePress}>
                     {renderImage()}
                 </TouchableOpacity>
             )}
-            <TouchableOpacity onPress={handlePress} style={styles.button}>
-                <Text style={styles.buttonText}>{renderButtonLabel()}</Text>
+            <TouchableOpacity onPress={handlePress} style={[styles.button, { backgroundColor: theme.colors.card }]}>
+                <Text style={[styles.buttonText, { color: 'white' }]}>{renderButtonLabel()}</Text>
             </TouchableOpacity>
             <Modal visible={expanded} animationType="slide">
-    <View style={styles.modalContent}>
-        <TouchableOpacity onPress={handlePress} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>X</Text>
-        </TouchableOpacity>
-        <Text style={[styles.modalTitle, { backgroundColor: modalTitleColor }]}>{title}</Text>
-        {/* Render the image here */}
-        {renderImage()} 
-        <ScrollView contentContainerStyle={styles.scrollView}>
-            <View style={styles.centeredContent}>
-                <HTML
-                    source={{ html: content }}
-                    contentWidth={windowWidth}
-                    ignoredDomTags={['video']}
-                    tagsStyles={{ p: { fontSize: 16, backgroundColor: htmlContentColor } }} 
-                />
-                {linkUrl && (
-                    <TouchableOpacity onPress={handleLinkPress} style={[styles.linkButton, { backgroundColor: linkButtonColor }]}>
-                        <Text style={styles.linkButtonText}>Open External</Text>
+                <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
+                    <TouchableOpacity onPress={handlePress} style={[styles.closeButton, { backgroundColor: theme.colors.error }]}>
+                        <Text style={[styles.closeButtonText, { fontSize: 14 * fontSizeMultiplier }]}>X</Text>
                     </TouchableOpacity>
-                )}
-                <TouchableOpacity onPress={handlePlayGame} style={[styles.playButton, { backgroundColor: playButtonColor }]}>
-                    <Text style={styles.playButtonText}>{showWebView ? 'Load Game' : 'Open In App'}</Text>
-                </TouchableOpacity>
-            </View>
-        </ScrollView>
-    </View>
-</Modal>
+                    <Text style={[styles.modalTitle, { backgroundColor: modalTitleColor, color: theme.colors.text, fontSize: 20 * fontSizeMultiplier }]}>{title}</Text>
+                    {renderImage()} 
+                    <ScrollView contentContainerStyle={styles.scrollView}>
+                        <View style={styles.centeredContent}>
+                            <HTML
+                                source={{ html: content }}
+                                contentWidth={windowWidth}
+                                ignoredDomTags={['video']}
+                                tagsStyles={{ 
+                                    p: { 
+                                        fontSize: 16 * fontSizeMultiplier, 
+                                        backgroundColor: htmlContentColor,
+                                        color: theme.colors.text 
+                                    } 
+                                }} 
+                            />
+                            {linkUrl && (
+                                <TouchableOpacity onPress={handleLinkPress} style={[styles.linkButton, { backgroundColor: linkButtonColor }]}>
+                                    <Text style={[styles.linkButtonText, { fontSize: 14 * fontSizeMultiplier }]}>Open External</Text>
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity onPress={handlePlayGame} style={[styles.playButton, { backgroundColor: playButtonColor }]}>
+                                <Text style={[styles.playButtonText, { fontSize: 14 * fontSizeMultiplier }]}>{showWebView ? 'Load Game' : 'Open In App'}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
 
-            {/* WebView for playing games */}
             <Modal visible={showWebView} animationType="slide" transparent={true}>
-                <View style={styles.webViewContainer}>
-                    <Text style={styles.gameTitle}>Play the Game!</Text>
-                    <Text style={styles.instructions}>Get ready to have fun!</Text>
+                <View style={[styles.webViewContainer, { backgroundColor: theme.colors.background }]}>
+                    <Text style={[styles.gameTitle, { color: theme.colors.text }]}>Play the Game!</Text>
+                    <Text style={[styles.instructions, { color: theme.colors.text }]}>Get ready to have fun!</Text>
                     {loading && (
                         <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#0000ff" />
-                            <Text>Loading...</Text>
+                            <ActivityIndicator size="large" color={theme.colors.primary} />
+                            <Text style={{ color: theme.colors.text }}>Loading...</Text>
                         </View>
                     )}
                     <WebView
-                        ref={webViewRef} // Attach the reference here
+                        ref={webViewRef}
                         source={{ uri: linkUrl }}
                         style={styles.webView}
                         onLoadStart={() => setLoading(true)}
                         onLoadEnd={() => setLoading(false)}
                     />
-                    <TouchableOpacity style={styles.closeGameButton} onPress={() => setShowWebView(false)}>
+                    <TouchableOpacity 
+                        style={[styles.closeGameButton, { backgroundColor: theme.colors.error }]} 
+                        onPress={() => setShowWebView(false)}
+                    >
                         <Text style={styles.closeButtonText}>Close Game</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.refreshButton} onPress={refreshPage}>
+                    <TouchableOpacity 
+                        style={[styles.refreshButton, { backgroundColor: theme.colors.primary }]} 
+                        onPress={refreshPage}
+                    >
                         <Text style={styles.refreshButtonText}>Refresh</Text>
                     </TouchableOpacity>
                 </View>
@@ -169,8 +187,10 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 10,
         borderWidth: 1,
-        borderColor: '#ccc',
         borderRadius: 5,
+        width: '100%',
+        maxWidth: '100%',
+        position: 'relative',
     },
     svgContainer: {
         justifyContent: 'center',
@@ -188,24 +208,39 @@ const styles = StyleSheet.create({
     title: {
         fontWeight: 'bold',
         marginBottom: 10,
+        fontSize: 16,
+        paddingRight: 80,
     },
     button: {
-        alignSelf: 'flex-end',
-        marginTop: 5,
-        padding: 5,
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        padding: 8,
         zIndex: 1,
-        backgroundColor: '#f0f0f0',
         borderRadius: 5,
+        minWidth: 80,
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#007AFF',
+        shadowOffset: {
+            width: 0,
+            height: 0,
+        },
+        shadowOpacity: 0.8,
+        shadowRadius: 8,
     },
     buttonText: {
-        color: 'blue',
         fontWeight: 'bold',
+        fontSize: 14,
+        textShadowColor: 'rgba(0, 122, 255, 0.75)',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 10,
     },
     modalContent: {
         flex: 1,
         paddingTop: 50,
         paddingHorizontal: 20,
-        alignItems: 'center', // Center horizontally
+        alignItems: 'center',
     },
     webViewContainer: {
         flex: 1,
@@ -214,7 +249,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'white',
         padding: 20,
     },
     webView: {
@@ -226,8 +260,8 @@ const styles = StyleSheet.create({
         top: 50,
         right: 30,
         padding: 10,
-        backgroundColor: 'red',
         borderRadius: 15,
+        zIndex: 2,
     },
     closeGameButton: {
         position: 'absolute',
@@ -235,34 +269,39 @@ const styles = StyleSheet.create({
         left: '75%',
         transform: [{ translateX: -50 }],
         padding: 10,
-        backgroundColor: 'orange', // Different background color for refresh
         borderRadius: 10,
+        zIndex: 2,
     },
     closeButtonText: {
         color: 'white',
         fontWeight: 'bold',
     },
     modalTitle: {
-        fontSize: 25,
+        fontSize: 20,
         fontWeight: 'bold',
         marginBottom: 10,
         textAlign: 'center',
+        padding: 10,
+        width: '100%',
     },
     scrollView: {
         flexGrow: 1,
         justifyContent: 'center',
         paddingHorizontal: 10,
+        width: '100%',
     },
     centeredContent: {
         alignItems: 'center',
         width: '100%',
+        paddingBottom: 20,
     },
     linkButton: {
         marginTop: 10,
         padding: 10,
-        backgroundColor: 'blue',
         borderRadius: 5,
         alignSelf: 'center',
+        minWidth: 120,
+        alignItems: 'center',
     },
     linkButtonText: {
         color: 'white',
@@ -271,23 +310,24 @@ const styles = StyleSheet.create({
     playButton: {
         marginTop: 10,
         padding: 10,
-        backgroundColor: 'green',
         borderRadius: 5,
         alignSelf: 'center',
+        minWidth: 120,
+        alignItems: 'center',
     },
     playButtonText: {
         color: 'white',
         fontWeight: 'bold',
     },
     gameTitle: {
-        fontSize: 24,
+        fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
         marginTop: 20,
         marginBottom: 10,
     },
     instructions: {
-        fontSize: 16,
+        fontSize: 14,
         textAlign: 'center',
         marginBottom: 20,
     },
@@ -297,6 +337,10 @@ const styles = StyleSheet.create({
         left: '50%',
         transform: [{ translateX: -50 }, { translateY: -50 }],
         alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: 20,
+        borderRadius: 10,
+        zIndex: 2,
     },
     refreshButton: {
         position: 'absolute',
@@ -304,8 +348,8 @@ const styles = StyleSheet.create({
         left: '25%',
         transform: [{ translateX: -50 }],
         padding: 10,
-        backgroundColor: 'orange', // Different background color for refresh
         borderRadius: 10,
+        zIndex: 2,
     },
     refreshButtonText: {
         color: 'white',

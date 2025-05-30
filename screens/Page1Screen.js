@@ -1,17 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, BackHandler, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, BackHandler, TouchableOpacity, Animated, Dimensions, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { useTheme } from '../context/ThemeContext';
+
+const { width } = Dimensions.get('window');
 
 const Page1Screen = () => {
     const navigation = useNavigation();
+    const { theme, isDarkMode } = useTheme();
     const [visitedUrls, setVisitedUrls] = useState(['https://ecosystem.ects-cmp.com/']);
     const [currentUrlIndex, setCurrentUrlIndex] = useState(0);
     const webViewRef = useRef(null);
     const [showMore, setShowMore] = useState(false); // State to manage the "More" submenu visibility
     const animatedValue = useState(new Animated.Value(0))[0]; // Pan gesture animated value
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
@@ -57,8 +64,20 @@ const Page1Screen = () => {
         handlePagePress(pageName);
     };
 
-    const handleWebViewError = (error) => {
-        console.error('WebView error:', error);
+    const handleWebViewError = (syntheticEvent) => {
+        const { nativeEvent } = syntheticEvent;
+        setHasError(true);
+        setErrorMessage(nativeEvent.description || 'Failed to load the page');
+        setIsLoading(false);
+    };
+
+    const handleLoadStart = () => {
+        setIsLoading(true);
+        setHasError(false);
+    };
+
+    const handleLoadEnd = () => {
+        setIsLoading(false);
     };
 
     // Pan Gesture Handling for right swipe
@@ -88,8 +107,9 @@ const Page1Screen = () => {
         <PanGestureHandler
             onGestureEvent={onGestureEvent}
             onHandlerStateChange={onHandlerStateChange}
+            activeOffsetX={[-15, 15]}
         >
-            <View style={styles.container}>
+            <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
                 <WebView
                     ref={webViewRef}
                     source={{ uri: visitedUrls[currentUrlIndex] }}
@@ -97,6 +117,30 @@ const Page1Screen = () => {
                     domStorageEnabled={true}
                     onNavigationStateChange={handleNavigationStateChange}
                     onError={handleWebViewError}
+                    onLoadStart={handleLoadStart}
+                    onLoadEnd={handleLoadEnd}
+                    renderLoading={() => (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color={theme.colors.primary} />
+                        </View>
+                    )}
+                    startInLoadingState={true}
+                    renderError={(errorDomain, errorCode, errorDesc) => (
+                        <View style={styles.errorContainer}>
+                            <Text style={[styles.errorText, { color: theme.colors.text }]}>
+                                {errorDesc || 'Failed to load the page'}
+                            </Text>
+                            <TouchableOpacity 
+                                style={styles.retryButton}
+                                onPress={() => {
+                                    setHasError(false);
+                                    webViewRef.current?.reload();
+                                }}
+                            >
+                                <Text style={styles.retryButtonText}>Retry</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 />
                 {/* Custom bottom navigation */}
                 <View style={styles.bottomNavigation}>
@@ -145,7 +189,6 @@ const Page1Screen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     bottomNavigation: {
         flexDirection: 'row',
@@ -185,6 +228,41 @@ const styles = StyleSheet.create({
       },
       moreMenuText: {
         color: 'white',
+    },
+    loadingContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    },
+    errorContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    retryButton: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 5,
+    },
+    retryButtonText: {
+        color: 'white',
+        fontSize: 16,
     },
 });
 

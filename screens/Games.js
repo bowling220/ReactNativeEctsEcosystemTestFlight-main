@@ -5,9 +5,11 @@ import axios from 'axios';
 import NetInfo from '@react-native-community/netinfo';
 import PostCard2 from '../components/PostCard2'; // Import PostCard2 instead of PostCard
 import { AntDesign } from '@expo/vector-icons'; // Import AntDesign
+import { useTheme } from '../context/ThemeContext';
 
 const ResourcePage = () => {
     const navigation = useNavigation();
+    const { theme, isDarkMode } = useTheme();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isConnected, setIsConnected] = useState(true);
@@ -54,9 +56,7 @@ const ResourcePage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                console.log('Fetching data...');
                 const response = await axios.get(`https://ects-cmp.com/appfeeds/ecosystem/resources.json?timestamp=${new Date().getTime()}`);
-                console.log('Raw data:', response.data);
         
                 let fetchedData = response.data;
                 if (typeof fetchedData === 'string') {
@@ -64,10 +64,8 @@ const ResourcePage = () => {
                 }
         
                 if (fetchedData && typeof fetchedData === 'object' && fetchedData.games) {
-                    console.log('Number of games fetched:', fetchedData.games.length); // How many games were fetched
         
                     const gamesWithImages = await Promise.all(fetchedData.games.map(async (game) => {
-                        console.log('Game:', game); // Log each game object to ensure data is coming in
         
                         const imageUrl = game.image;
                         if (imageUrl) {
@@ -75,7 +73,6 @@ const ResourcePage = () => {
                                 const imageResponse = await axios.get(imageUrl);
                                 game.imageData = imageResponse.data;
                             } catch (error) {
-                                console.error(`Error fetching image for ${game.name}:`, error);
                                 game.imageData = null;
                             }
                         }
@@ -85,10 +82,8 @@ const ResourcePage = () => {
                     setData(gamesWithImages); // Update the data state with the array of games with images
                 } else {
                     // Handle case where no games are found
-                    console.warn('No games found in the fetched data');
                 }
             } catch (error) {
-                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }
@@ -132,16 +127,17 @@ const ResourcePage = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             {loading ? (
-            <View style={styles.loading}>
-                <ActivityIndicator size="large" color="#0000ff" />
-            </View>
-        ) : (
-            <ScrollView style={styles.scrollView}>
-                {data.length > 0 ? renderCards(data) : <Text>No items to display</Text>}
-            </ScrollView>
-        )}
+                <View style={styles.loading}>
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
+                </View>
+            ) : (
+                <ScrollView style={styles.scrollView}>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Games</Text>
+                    {data.length > 0 ? renderCards(data) : <Text style={{ color: theme.colors.text }}>No items to display</Text>}
+                </ScrollView>
+            )}
 
             <View style={styles.bottomNavigation}>
                 <TouchableOpacity style={styles.tabButton} onPress={() => handlePagePress('Home')}>
@@ -185,7 +181,6 @@ const ResourcePage = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
         padding: 10,
     },
     scrollView: {

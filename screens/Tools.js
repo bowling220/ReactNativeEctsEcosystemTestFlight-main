@@ -5,9 +5,11 @@ import axios from 'axios';
 import NetInfo from '@react-native-community/netinfo';
 import PostCard2 from '../components/PostCard2';
 import { AntDesign } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 const ResourcePage = () => {
     const navigation = useNavigation();
+    const { theme, isDarkMode } = useTheme();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isConnected, setIsConnected] = useState(true);
@@ -55,9 +57,7 @@ const ResourcePage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                console.log('Fetching data...');
                 const response = await axios.get('https://ects-cmp.com/appfeeds/ecosystem/resources.json');
-                console.log('Raw data:', response.data);
 
                 let fetchedData = response.data;
                 if (typeof fetchedData === 'string') {
@@ -66,12 +66,9 @@ const ResourcePage = () => {
 
                 if (fetchedData && typeof fetchedData === 'object' && fetchedData.tools) {
                     setData(fetchedData.tools);
-                    console.log('Data set in state:', fetchedData.tools);
                 } else {
-                    console.error('Fetched data is not valid:', fetchedData);
                 }
             } catch (error) {
-                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }
@@ -113,15 +110,15 @@ const ResourcePage = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             {loading ? (
                 <View style={styles.loading}>
-                    <ActivityIndicator size="large" color="#0000ff" />
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
                 </View>
             ) : (
                 <ScrollView style={styles.scrollView}>
-                    <Text style={styles.sectionTitle}>Tools</Text>
-                    {data.length > 0 ? renderCards(data) : <Text>No items to display</Text>}
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Tools</Text>
+                    {data.length > 0 ? renderCards(data) : <Text style={{ color: theme.colors.text }}>No items to display</Text>}
                 </ScrollView>
             )}
             
@@ -167,7 +164,6 @@ const ResourcePage = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
         padding: 10,
     },
     scrollView: {

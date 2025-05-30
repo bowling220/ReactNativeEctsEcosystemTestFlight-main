@@ -5,9 +5,11 @@ import axios from 'axios';
 import NetInfo from '@react-native-community/netinfo';
 import PostCard2 from '../components/PostCard2'; // Import PostCard2
 import { AntDesign } from '@expo/vector-icons'; // Import AntDesign
+import { useTheme } from '../context/ThemeContext';
 
 const ResourcePage = () => {
     const navigation = useNavigation();
+    const { theme, isDarkMode } = useTheme();
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isConnected, setIsConnected] = useState(true);
@@ -55,9 +57,7 @@ const ResourcePage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                console.log('Fetching data...');
                 const response = await axios.get('https://ects-cmp.com/appfeeds/ecosystem/resources.json');
-                console.log('Raw data:', response.data);
                 
                 // Ensure data is an object and not a string
                 let fetchedData = response.data;
@@ -67,12 +67,9 @@ const ResourcePage = () => {
         
                 if (fetchedData && typeof fetchedData === 'object' && fetchedData.links) {
                     setData(fetchedData.links);
-                    console.log('Data set in state:', fetchedData.links);
                 } else {
-                    console.error('Fetched data is not valid:', fetchedData);
                 }
             } catch (error) {
-                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }
@@ -114,15 +111,15 @@ const ResourcePage = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
             {loading ? (
                 <View style={styles.loading}>
-                    <ActivityIndicator size="large" color="#0000ff" />
+                    <ActivityIndicator size="large" color={theme.colors.primary} />
                 </View>
             ) : (
                 <ScrollView style={styles.scrollView}>
-                    <Text style={styles.sectionTitle}>Links</Text>
-                    {data.length > 0 ? renderCards(data) : <Text>No items to display</Text>}
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Links</Text>
+                    {data.length > 0 ? renderCards(data) : <Text style={{ color: theme.colors.text }}>No items to display</Text>}
                 </ScrollView>
             )}
 
@@ -168,16 +165,17 @@ const ResourcePage = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
         padding: 10,
     },
     scrollView: {
         flex: 1,
+        paddingBottom: 70, // Add padding to account for bottom navigation
     },
     sectionTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         marginVertical: 10,
+        paddingHorizontal: 5,
     },
     loading: {
         flex: 1,
@@ -199,9 +197,11 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
+        zIndex: 1000,
     },
     tabButton: {
         alignItems: 'center',
+        paddingHorizontal: 10,
     },
     tabText: {
         color: 'white',
@@ -215,12 +215,15 @@ const styles = StyleSheet.create({
         right: 0,
         padding: 10,
         borderRadius: 5,
+        zIndex: 1001,
     },
-      moreMenuItem: {
+    moreMenuItem: {
         paddingVertical: 10,
-      },
-      moreMenuText: {
+        paddingHorizontal: 15,
+    },
+    moreMenuText: {
         color: 'white',
+        fontSize: 14,
     },
 });
 

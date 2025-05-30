@@ -21,6 +21,14 @@ export const ThemeProvider = ({ children }) => {
 export const useTheme = () => useContext(ThemeContext);
 
 const lightTheme = {
+  colors: {
+    primary: '#007AFF',
+    background: '#FFFFFF',
+    card: '#F8F8F8',
+    text: '#000000',
+    border: '#CCCCCC',
+    notification: '#FF3B30',
+  },
   container: {
     flex: 1,
     padding: 20,
@@ -79,10 +87,17 @@ const lightTheme = {
   linkText: {
     color: '#007bff',
   },
-
 };
 
 const darkTheme = {
+  colors: {
+    primary: '#0A84FF',
+    background: '#000000',
+    card: '#1C1C1E',
+    text: '#FFFFFF',
+    border: '#38383A',
+    notification: '#FF453A',
+  },
   container: {
     flex: 1,
     padding: 20,
